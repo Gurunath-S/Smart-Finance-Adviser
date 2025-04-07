@@ -1,0 +1,7 @@
+JWT_SECRET=1g2u3r4u5n6at7h8S9
+MONGO_URL=mongodb+srv://Guru:guruguruguru@cluster0.cmarr4t.mongodb.net/financial_records
+PORT = 5000
+CO_API_KEY=HZU46bkzJSlRc9R4snxdAuzIcrrCJWuE8H1ozQM2
+HUGGINGFACE_API_KEY= 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
+EMAIL_USER=gururider35@gmail.com
+EMAIL_PASS=gabmjqxumodmrxjj
