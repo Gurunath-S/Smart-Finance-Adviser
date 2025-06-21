@@ -1,3 +1,3 @@
-# Personal-Finance-App
+# Smart-Finance-Adviser
 ### Live demo https://smart-finance-adviser.vercel.app/
-Personal-Finance-App  a web app that gives advise from the user incomes, expenses and savings  
+Smart-Finance-Adviser  a web app that gives advise from the user incomes, expenses and savings  
