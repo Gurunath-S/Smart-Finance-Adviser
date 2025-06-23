@@ -8,11 +8,10 @@ Smart-Finance-Adviser is a full-stack MERN web application that helps users mana
 
 ## 🔧 Tech Stack
 
-- **Frontend:** React, Tailwind CSS  
+- **Frontend:** React  
 - **Backend:** Node.js, Express  
 - **Database:** MongoDB  
 - **Authentication:** JWT  
-- **Deployment:** Vercel (Frontend), Render/Heroku (Backend)
 
 ---
 
