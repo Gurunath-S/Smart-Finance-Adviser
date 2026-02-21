@@ -1,8 +1,10 @@
 const express = require("express");
 const { sendMail } = require("../controllers/mailer");
+const verifyToken = require("../middleware/verifyToken");
 const router = express.Router();
 
-router.post("/send-email", async (req, res) => {
+// Protected — only authenticated users can trigger emails
+router.post("/send-email", verifyToken, async (req, res) => {
   const { to, subject, text, html } = req.body;
 
   try {

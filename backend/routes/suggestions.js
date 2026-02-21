@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const cohere = require('cohere-ai');
-const Suggestion = require('../models/Suggestion'); // Ensure this path is correct
-const moment = require('moment');
+const { CohereClientV2 } = require('cohere-ai');
+const Suggestion = require('../models/Suggestion');
+const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
-const { CohereClientV2 } = require('cohere-ai'); // Importing the new client
 
-// Create a Cohere client instance with the API key
+// Create a Cohere client instance using the API key from environment variables
 const cohereClient = new CohereClientV2({
-  token: 'HZU46bkzJSlRc9R4snxdAuzIcrrCJWuE8H1ozQM2',  // Hardcode your API key here
+  token: process.env.CO_API_KEY,
 });
 
-// Generate suggestions using Cohere API
-router.post('/get-suggestions', async (req, res) => {
+// Generate suggestions using Cohere API (protected)
+router.post('/get-suggestions', verifyToken, async (req, res) => {
   try {
     const { balance, income, expenses } = req.body;
 
@@ -20,9 +19,8 @@ router.post('/get-suggestions', async (req, res) => {
 Suggest a structured financial plan focusing only on the most suitable investment options from the following: SIP, SWP, Fixed Deposit, Mutual Funds, PPF, and Gold.
 Evaluate which of these options best fit my financial status and goals, considering savings, income, and expenses. Provide clear monthly allocation suggestions and a brief conclusion. With only 3 points and with an conculsion  max 200 words`;
 
-    // Calling Cohere's chat endpoint
     const response = await cohereClient.chat({
-      model: 'command-a-03-2025', 
+      model: 'command-a-03-2025',
       messages: [
         {
           role: 'user',
@@ -31,9 +29,6 @@ Evaluate which of these options best fit my financial status and goals, consider
       ],
     });
 
-    console.log("Full Cohere API Response:", JSON.stringify(response, null, 2)); // Logging the full response object
-
-    // Checking if the response contains the expected content
     const aiMessage = response?.message?.content?.[0]?.text;
 
     if (!aiMessage) {
@@ -52,11 +47,8 @@ Evaluate which of these options best fit my financial status and goals, consider
   }
 });
 
-
-
-
-// Save suggestions to the database
-router.post('/saveSuggestions', async (req, res) => {
+// Save suggestions to the database (protected)
+router.post('/saveSuggestions', verifyToken, async (req, res) => {
   try {
     const { suggestions, itemsUsedCount } = req.body;
 
@@ -64,10 +56,12 @@ router.post('/saveSuggestions', async (req, res) => {
       return res.status(400).json({ error: 'Invalid suggestions data.' });
     }
 
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
     const newSuggestion = new Suggestion({
       suggestions,
       itemsUsedCount,
-      date: moment().format('YYYY-MM-DD'), // Save the current date
+      date: today,
     });
 
     await newSuggestion.save();

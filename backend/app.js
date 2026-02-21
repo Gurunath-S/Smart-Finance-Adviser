@@ -1,26 +1,26 @@
 const express = require('express')
 const cors = require('cors');
 const { db } = require('./db/db');
-const {readdirSync} = require('fs')
 const app = express()
 const authRoutes = require('./routes/auth')
-const bodyParser = require('body-parser');
 const suggestionsRoute = require("./routes/suggestions");
 const emailRoutes = require("./routes/emailRoutes");
+const transactionRoutes = require("./routes/transactions");
+const userRoutes = require("./routes/userRoutes");
 require('dotenv').config()
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 5000;
 
 //middlewares
 app.use(express.json())
 app.use(cors())
-app.use(bodyParser.json());
+
+//routes
 app.use('/api/auth', authRoutes);
-app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/users", userRoutes);
 app.use("/api/v1", suggestionsRoute);
 app.use("/api", emailRoutes);
-//routes
-readdirSync('./routes').map((route) => app.use('/api/v1', require('./routes/' + route)))
+app.use('/api/v1', transactionRoutes);
 
 const server = () => {
     db()

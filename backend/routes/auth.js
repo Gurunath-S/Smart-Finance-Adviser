@@ -36,7 +36,8 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username });
+    // Only select the fields we actually need — avoids loading unused data
+    const user = await User.findOne({ username }).select('username email userId password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await user.matchPassword(password);

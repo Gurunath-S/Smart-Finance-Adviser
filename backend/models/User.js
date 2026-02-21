@@ -11,11 +11,14 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Use fewer rounds in dev for speed; keep 10 in production for security
+const SALT_ROUNDS = process.env.NODE_ENV === 'production' ? 10 : 4;
+
 // Automatically generate userId before saving
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
 
   if (!this.userId) {
     this.userId = `${this.username}-${Date.now()}`;
