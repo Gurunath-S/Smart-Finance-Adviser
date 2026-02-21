@@ -19,7 +19,7 @@ const Homelog = () => {
         <div className="panel left-panel">
           <div className="content">
             <h3>New here?</h3>
-            <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Debitis, ex ratione. Aliquid!</p>
+            <p>Join thousands managing their money smarter. Track income, control expenses, and get AI-powered financial advice.</p>
             <button className="btn transparent" onClick={() => setSignUpMode(true)}>
               Sign up
             </button>
@@ -29,7 +29,7 @@ const Homelog = () => {
         <div className="panel right-panel">
           <div className="content">
             <h3>One of us?</h3>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum laboriosam ad deleniti.</p>
+            <p>Welcome back! Sign in to view your dashboard, track your finances, and check your latest AI suggestions.</p>
             <button className="btn transparent" onClick={() => setSignUpMode(false)}>
               Sign in
             </button>

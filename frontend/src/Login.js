@@ -70,11 +70,6 @@ const Login = () => {
       return;
     }
 
-    if (formData.username === "admin123" && formData.password === "admin123") {
-      setMessage("Admin login successful!");
-      navigate("/admin-dashboard");
-      return;
-    }
 
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, formData);

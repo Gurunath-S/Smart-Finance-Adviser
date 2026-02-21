@@ -4,7 +4,8 @@ const { fetchTransactions } = require('../controllers/transactionController');
 const router = require('express').Router();
 const verifyToken = require("../middleware/verifyToken");
 
-console.log({ addExpense, getExpense, deleteExpense, addIncome, getIncomes, deleteIncome });
+// Apply verifyToken to all routes in this router
+router.use(verifyToken);
 
 router.post('/add-income', addIncome)
     .get('/get-incomes', getIncomes)
@@ -14,4 +15,4 @@ router.post('/add-income', addIncome)
     .delete('/delete-expense/:id', deleteExpense)
     .get("/get-user-transactions/:userId", fetchTransactions);
 
-    module.exports = router
+module.exports = router;

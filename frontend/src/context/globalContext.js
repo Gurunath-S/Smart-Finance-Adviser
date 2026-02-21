@@ -1,15 +1,18 @@
 import React, { useContext, useState } from "react";
 import axios from 'axios';
+import { API_BASE_URL } from "../config";
 
-const BASE_URL = "https://sfa-backend-1.onrender.com/api/v1/";
+// Base URLs for different route groups
+const V1_URL = `${API_BASE_URL}/v1/`;   // income, expenses, suggestions
+const ADMIN_URL = `${API_BASE_URL}/users/`; // user management
 
 const GlobalContext = React.createContext();
 
-export const GlobalProvider = ({ children ,  manId, setManId}) => {
+export const GlobalProvider = ({ children, manId, setManId }) => {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token") || null);  // Store token in local storage or state
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -17,16 +20,13 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
   const [transactions, setTransactions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [message, setMessage] = useState(null);
-  console.log(token);
-  
+
   // Helper function to add token to headers
-  const getAuthHeaders = () => {
-    return {
-      headers: {
-        Authorization: `Bearer ${token} || localStorage.getItem("token")` // Include token in Authorization header
-      }
-    };
-  };
+  const getAuthHeaders = () => ({
+    headers: {
+      Authorization: `Bearer ${token || localStorage.getItem("token")}`,
+    },
+  });
 
   // Check if token is valid
   const isTokenValid = token && token.trim() !== "";
@@ -37,13 +37,11 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
-    const { amount } = income;
     try {
-      const response = await axios.post(`${BASE_URL}add-income`, income, getAuthHeaders());
+      await axios.post(`${V1_URL}add-income`, income, getAuthHeaders());
       getIncomes();
     } catch (err) {
-      setError(err.response?.data?.message || 'Server is Error');
+      setError(err.response?.data?.message || 'Server Error');
     }
   };
 
@@ -53,9 +51,8 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
     try {
-      const response = await axios.get(`${BASE_URL}get-incomes`, getAuthHeaders());
+      const response = await axios.get(`${V1_URL}get-incomes`, getAuthHeaders());
       setIncomes(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
@@ -68,9 +65,8 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
     try {
-      const response = await axios.delete(`${BASE_URL}delete-income/${id}`, getAuthHeaders());
+      await axios.delete(`${V1_URL}delete-income/${id}`, getAuthHeaders());
       getIncomes();
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
@@ -88,14 +84,12 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Amount must be a positive number!");
       return;
     }
-
     if (!isTokenValid) {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
     try {
-      const response = await axios.post(`${BASE_URL}add-expense`, expense, getAuthHeaders());
+      await axios.post(`${V1_URL}add-expense`, expense, getAuthHeaders());
       getExpenses();
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
@@ -108,9 +102,8 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
     try {
-      const response = await axios.get(`${BASE_URL}get-expenses`, getAuthHeaders());
+      const response = await axios.get(`${V1_URL}get-expenses`, getAuthHeaders());
       setExpenses(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
@@ -123,9 +116,8 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
       setError("Authorization token is missing or invalid.");
       return;
     }
-
     try {
-      const res = await axios.delete(`${BASE_URL}delete-expense/${id}`, getAuthHeaders());
+      await axios.delete(`${V1_URL}delete-expense/${id}`, getAuthHeaders());
       getExpenses();
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
@@ -142,32 +134,31 @@ export const GlobalProvider = ({ children ,  manId, setManId}) => {
     return totalIncome() - totalExpenses();
   };
 
-  // Transaction history
+  // Transaction history — last 5 sorted by date
   const transactionHistory = () => {
     const history = [...incomes, ...expenses];
     history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     return history.slice(0, 5);
   };
 
+  // ── Admin / User Management ──────────────────────────────────
 
-const getUsers = async () => {
+  const getUsers = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}get-users`, getAuthHeaders());
+      const response = await axios.get(`${ADMIN_URL}get-users`, getAuthHeaders());
       setUsers(response.data);
     } catch (err) {
       setError(err.response?.data?.message || "Server Error");
     }
   };
 
-  // Add a new user
   const addUser = async (newUser) => {
     if (!newUser.username || !newUser.email || !newUser.password) {
       setError("All fields are required");
       return;
     }
-
     try {
-      const response = await axios.post(`${BASE_URL}add-users`, newUser);
+      const response = await axios.post(`${ADMIN_URL}add-users`, newUser, getAuthHeaders());
       setUsers([...users, response.data]);
       setError("");
     } catch (err) {
@@ -175,106 +166,61 @@ const getUsers = async () => {
     }
   };
 
-  // Delete a user
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}delete-users/${id}`);
+      await axios.delete(`${ADMIN_URL}delete-users/${id}`, getAuthHeaders());
       setUsers(users.filter((user) => user._id !== id));
       setError("");
     } catch (err) {
-      setError( "Error deleting user");
+      setError("Error deleting user");
     }
   };
 
   const fetchUserTransactions = async (userId) => {
     try {
-      const response = await fetch(`${BASE_URL}get-user-transactions/${userId}`, {  // Ensure correct URL
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to fetch user transactions');
-      }
-  
-      const data = await response.json(); // Parse the JSON response
-      console.log("📥 Fetched Data:", data);
-      setTransactions(data)
-
+      const response = await axios.get(
+        `${ADMIN_URL}get-user-transactions/${userId}`,
+        getAuthHeaders()
+      );
+      setTransactions(response.data);
     } catch (err) {
-      setError(err.message || "An error occurred while fetching transactions.");
+      setError(err.response?.data?.message || "An error occurred while fetching transactions.");
     }
-};
-//sugesstion module
+  };
 
-const fetchSuggestions = async (balance, income, expenses) => {
-  try {
-    console.log("Sending request to backend with:", { balance, income, expenses });
-    
-    const response = await fetch(`${BASE_URL}get-suggestions`, {  
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ balance, income, expenses })
-    });
+  // ── AI Suggestions ───────────────────────────────────────────
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Backend returned error:", errorData);
-      throw new Error(errorData.message || 'Network response was not ok');
+  const fetchSuggestions = async (balance, income, expenses) => {
+    try {
+      const response = await axios.post(
+        `${V1_URL}get-suggestions`,
+        { balance, income, expenses },
+        getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching suggestions:", error.message);
+      throw error;
     }
+  };
 
-    const data = await response.json();
-    console.log("Fetched Data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error during fetch:", error.message);
-    throw error;
-  }
-};
-
-
-const saveSuggestions = async (suggestionsArray) => {
-  try {
-    const response = await fetch(`${BASE_URL}saveSuggestions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        suggestions: suggestionsArray,
-        itemsUsedCount: suggestionsArray.length
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Error saving suggestions:", data.error);
-    } else {
-      console.log("Suggestions saved successfully.");
+  const saveSuggestions = async (suggestionsArray) => {
+    try {
+      await axios.post(
+        `${V1_URL}saveSuggestions`,
+        { suggestions: suggestionsArray, itemsUsedCount: suggestionsArray.length },
+        getAuthHeaders()
+      );
+    } catch (error) {
+      console.error("Failed to save suggestions:", error);
     }
-  } catch (error) {
-    console.error("Failed to save suggestions:", error);
-  }
-};
-
-
-
-
-
-
-
+  };
 
   // Set token and store in localStorage
   const setTokenAndSave = (newToken) => {
     setToken(newToken);
-    localStorage.setItem("token", newToken); // Store token in localStorage for persistence
+    localStorage.setItem("token", newToken);
   };
-
 
   return (
     <GlobalContext.Provider
@@ -293,9 +239,9 @@ const saveSuggestions = async (suggestionsArray) => {
         transactionHistory,
         error,
         setError,
-        token, // Add token to context
-        setTokenAndSave, // Add setTokenAndSave to context
-        getUsers, // Expose getUsers in context
+        token,
+        setTokenAndSave,
+        getUsers,
         users,
         addUser,
         deleteUser,
