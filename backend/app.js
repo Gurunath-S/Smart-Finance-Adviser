@@ -1,4 +1,5 @@
 const express = require('express')
+const path = require('path')
 const cors = require('cors');
 const { db } = require('./db/db');
 const app = express()
@@ -7,20 +8,22 @@ const suggestionsRoute = require("./routes/suggestions");
 const emailRoutes = require("./routes/emailRoutes");
 const transactionRoutes = require("./routes/transactions");
 const userRoutes = require("./routes/userRoutes");
+const budgetRoutes = require("./routes/budgets");
 require('dotenv').config()
 
 const PORT = process.env.PORT || 5000;
 
-//middlewares
 app.use(express.json())
 app.use(cors())
+// Serve uploaded avatar images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-//routes
 app.use('/api/auth', authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/v1", suggestionsRoute);
+app.use("/api/v1", transactionRoutes);
+app.use("/api/v1/budgets", budgetRoutes);
 app.use("/api", emailRoutes);
-app.use('/api/v1', transactionRoutes);
 
 const server = () => {
     db()

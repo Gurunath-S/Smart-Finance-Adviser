@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "./config";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGlobalContext } from "./context/globalContext";
 import styled from "styled-components";
 
@@ -115,6 +115,9 @@ const Login = () => {
         </div>
 
         <input type="submit" value="Login" className="btn solid" />
+        <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: '#888', display: 'block', textAlign: 'center', marginTop: '0.5rem', textDecoration: 'none' }}>
+          Forgot your password?
+        </Link>
         {message && <p>{message}</p>}
       </form>
     </>

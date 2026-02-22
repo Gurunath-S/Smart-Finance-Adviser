@@ -29,8 +29,7 @@ const FinancialSuggestion = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log("Updated Suggestions in State:", suggestions);
-    console.log("data sent:", totalIncome() - totalExpenses(), totalIncome(), totalExpenses())
+    // suggestions updated
   }, [suggestions]);
 
   const handleGetSuggestions = async () => {
@@ -47,8 +46,6 @@ const FinancialSuggestion = () => {
           : data.suggestions.split("\n").map(item => item.trim()).filter(Boolean);
 
         setSuggestions(suggestionsArray);
-        console.log("Suggestions set:", suggestionsArray);
-
         await saveSuggestions(suggestionsArray);
       } else {
         throw new Error("No suggestions found.");
@@ -227,7 +224,7 @@ const FinancialSuggestion = () => {
             <button onClick={() => setSelectedCalculator("Gold")}>Gold</button>
           </div>
         </div>
-        
+
         <div className="calculators-container">
           <AnimatePresence>
             {selectedCalculator && (
@@ -235,7 +232,7 @@ const FinancialSuggestion = () => {
                 key="calculator"
                 className="calculator-wrapper"
                 initial={{ x: chartData ? "-50%" : 0 }}
-                animate={{ 
+                animate={{
                   x: chartData ? 0 : "0%",
                   width: chartData ? "45%" : "100%"
                 }}
