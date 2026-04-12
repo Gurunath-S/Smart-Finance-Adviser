@@ -23,7 +23,7 @@ router.post("/signup", async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.status(201).json({
-      user: { username: user.username, email: user.email, userId: user.userId },
+      user: { username: user.username, email: user.email, userId: user.userId, profileImage: user.profileImage },
       token,
     });
   } catch (error) {
@@ -37,7 +37,7 @@ router.post('/login', async (req, res) => {
 
   try {
     // Only select the fields we actually need — avoids loading unused data
-    const user = await User.findOne({ username }).select('username email userId password');
+    const user = await User.findOne({ username }).select('username email userId password profileImage');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await user.matchPassword(password);
@@ -46,7 +46,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({
-      user: { username: user.username, email: user.email, userId: user.userId },
+      user: { username: user.username, email: user.email, userId: user.userId, profileImage: user.profileImage },
       token,
     });
   } catch (error) {

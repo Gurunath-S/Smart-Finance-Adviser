@@ -60,6 +60,7 @@ const Login = () => {
       localStorage.setItem("token", token);
       setTokenAndSave(token);
       localStorage.setItem("username", formData.username);
+      localStorage.setItem("profileImage", response.data.user.profileImage || "");
       navigate("/dashboard");
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Login failed. Please try again.";

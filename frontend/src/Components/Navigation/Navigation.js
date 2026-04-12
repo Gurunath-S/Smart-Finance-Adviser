@@ -1,26 +1,64 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import styled from 'styled-components';
-import avatar from '../../img/avatar.png';
+import defaultAvatar from '../../img/avatar.png';
 import { signout } from '../../utils/Icons';
 import { menuItems } from '../../utils/menuItems';
 import { useGlobalContext } from '../../context/globalContext';
 import { useNavigate } from "react-router-dom";
 import { motion } from 'framer-motion';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 function Navigation({ active, setActive }) {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
+    const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
+    const [errorMsg, setErrorMsg] = useState("");
+    const fileInputRef = useRef(null);
     const { totalIncome } = useGlobalContext();
 
     useEffect(() => {
         const savedUsername = localStorage.getItem("username");
-        setUsername(savedUsername || "Guest"); // Default to "Guest" if no username
-        localStorage.getItem('userId')
+        setUsername(savedUsername || "Guest"); 
+        
+        const savedImage = localStorage.getItem("profileImage");
+        if (savedImage) {
+            setAvatarUrl(savedImage.startsWith("http") ? savedImage : `${API_BASE_URL.replace("/api", "")}${savedImage}`);
+        } else {
+            setAvatarUrl(defaultAvatar);
+        }
     }, []);
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(`${API_BASE_URL}/users/update-profile-image`, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            const newPath = response.data.profileImage;
+            localStorage.setItem("profileImage", newPath);
+            setAvatarUrl(newPath.startsWith("http") ? newPath : `${API_BASE_URL.replace("/api", "")}${newPath}`);
+        } catch (error) {
+            console.error("Error updating profile image", error);
+            const msg = error.response?.data?.message || "Cloud upload failed. Check keys.";
+            setErrorMsg(msg);
+            setTimeout(() => setErrorMsg(""), 4000);
+        }
+    };
+
     const handleLogout = () => {
-        localStorage.removeItem('token');  // Clear token
+        localStorage.removeItem('token'); 
         localStorage.removeItem("username");
+        localStorage.removeItem("profileImage");
         navigate("/");
         alert(`You have been logged out from ID ${username}`);
     };
@@ -38,7 +76,27 @@ function Navigation({ active, setActive }) {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2 }}
             >
-                <img src={avatar} alt="" />
+                {errorMsg && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.8 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        className="error-toast"
+                    >
+                        {errorMsg}
+                    </motion.div>
+                )}
+                
+                <div className="avatar-wrapper" onClick={() => fileInputRef.current.click()}>
+                    <img src={avatarUrl} alt="Profile" />
+                    <div className="overlay">Edit</div>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        style={{ display: "none" }} 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                    />
+                </div>
                 <div className="text">
                     <h2>{username}</h2>
                     <p>$ {totalIncome()}</p>
@@ -112,6 +170,59 @@ const NavStyled = styled(motion.nav)`
         p {
             color: rgba(34, 34, 96, 0.6);
         }
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        cursor: pointer;
+        overflow: hidden;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0px 1px 17px rgba(0, 0, 0, 0.06);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: none;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        &:hover .overlay {
+            opacity: 1;
+        }
+    }
+
+    .error-toast {
+        background-color: #ff6b6b;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        width: 100%;
     }
 
     .menu-items {
