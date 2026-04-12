@@ -4,34 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "./config";
 import styled from "styled-components";
 
-const ValidationPopup = styled.div`
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #ff6b6b;
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  animation: slideIn 0.3s ease-out;
 
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-`;
 
 const Signup = () => {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
-  const [validationMessage, setValidationMessage] = useState(null);
-  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const validateFields = () => {
@@ -51,9 +30,9 @@ const Signup = () => {
     return "";
   };
 
-  const showValidationMessage = (message) => {
-    setValidationMessage(message);
-    setTimeout(() => setValidationMessage(null), 3000);
+  const showValidationMessage = (msg) => {
+    setErrorMessage(msg);
+    setTimeout(() => setErrorMessage(null), 3000);
   };
 
   const handleChange = (e) => {
@@ -63,31 +42,38 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage("");
 
-    const errorMessage = validateFields();
-    if (errorMessage) {
-      showValidationMessage(errorMessage);
+    const validationError = validateFields();
+    if (validationError) {
+      showValidationMessage(validationError);
       return;
     }
 
+    setIsLoading(true);
+
     try {
       await axios.post(`${API_BASE_URL}/auth/signup`, formData);
-      setMessage("Signup successful! Redirecting to login...");
+      setSuccessMessage("Signup successful! Redirecting to login...");
       setFormData({ username: "", email: "", password: "" });
       localStorage.removeItem("token");
       setTimeout(() => navigate("/login", window.location.reload(), { replace: true }), 1000);
-      
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Signup failed. Please try again.";
-      showValidationMessage(errorMessage);
+      const errorMsg = error.response?.data?.message || "Signup failed. Please try again.";
+      showValidationMessage(errorMsg);
+      setIsLoading(false);
     }
   };
 
   return (
     <>
-      {validationMessage && <ValidationPopup>{validationMessage}</ValidationPopup>}
       <form className="sign-up-form" onSubmit={handleSubmit}>
         <h2 className="title">Sign up</h2>
+        
+        {errorMessage && <div className="error-text">{errorMessage}</div>}
+        {successMessage && <div className="success-text">{successMessage}</div>}
+
         <div className="input-field">
           <i className="fas fa-user"></i>
           <input
@@ -96,6 +82,7 @@ const Signup = () => {
             placeholder="Username"
             value={formData.username}
             onChange={handleChange}
+            disabled={isLoading}
           />
         </div>
         <div className="input-field">
@@ -106,6 +93,7 @@ const Signup = () => {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
+            disabled={isLoading}
           />
         </div>
         <div className="input-field">
@@ -116,10 +104,15 @@ const Signup = () => {
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
+            disabled={isLoading}
           />
         </div>
-        <input type="submit" className="btn" value="Sign up" />
-        {message && <p>{message}</p>}
+        <input 
+          type="submit" 
+          className={`btn ${isLoading ? "loading" : ""}`} 
+          value={isLoading ? "Signing up..." : "Sign up"} 
+          disabled={isLoading} 
+        />
       </form>
     </>
   );

@@ -152,6 +152,49 @@ form.sign-in-form {
 .btn:hover {
   background-color: #111318;
 }
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-text {
+  color: #d11a2a;
+  background-color: #fdd;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.success-text {
+  color: #155724;
+  background-color: #d4edda;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+a.social-text.forgot-password {
+  text-decoration: none;
+  color: #333;
+  margin-top: -5px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  transition: 0.3s;
+}
+
+a.social-text.forgot-password:hover {
+  color: #5995fd;
+  text-decoration: underline;
+}
 .panels-container {
   position: absolute;
   height: 100%;
