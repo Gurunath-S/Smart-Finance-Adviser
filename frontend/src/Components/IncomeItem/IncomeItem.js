@@ -13,56 +13,37 @@ function IncomeItem({
     description,
     deleteItem,
     indicatorColor,
-    type
+    type,
+    onEdit
 }) {
 
-    const categoryIcon = () =>{
-        switch(category) {
-            case 'salary':
-                return money;
-            case 'freelancing':
-                return freelance
-            case 'investments':
-                return stocks;
-            case 'stocks':
-                return users;
-            case 'bitcoin':
-                return bitcoin;
-            case 'bank':
-                return card;
-            case 'youtube':
-                return yt;
-            case 'other':
-                return piggy;
-            default:
-                return ''
+    const categoryIcon = () => {
+        switch (category) {
+            case 'salary': return money;
+            case 'freelancing': return freelance;
+            case 'investments': return stocks;
+            case 'stocks': return users;
+            case 'bitcoin': return bitcoin;
+            case 'bank': return card;
+            case 'youtube': return yt;
+            case 'other': return piggy;
+            default: return '';
         }
     }
 
     const expenseCatIcon = () => {
         switch (category) {
-            case 'education':
-                return book;
-            case 'groceries':
-                return food;
-            case 'health':
-                return medical;
-            case 'subscriptions':
-                return tv;
-            case 'takeaways':
-                return takeaway;
-            case 'clothing':
-                return clothing;
-            case 'travelling':
-                return freelance;
-            case 'other':
-                return circle;
-            default:
-                return ''
+            case 'education': return book;
+            case 'groceries': return food;
+            case 'health': return medical;
+            case 'subscriptions': return tv;
+            case 'takeaways': return takeaway;
+            case 'clothing': return clothing;
+            case 'travelling': return freelance;
+            case 'other': return circle;
+            default: return '';
         }
     }
-
-    console.log('type', type)
 
     return (
         <IncomeItemStyled indicator={indicatorColor}>
@@ -75,17 +56,26 @@ function IncomeItem({
                     <div className="text">
                         <p>{dollar} {amount}</p>
                         <p>{calender} {dateFormat(date)}</p>
-                        <p>
-                            {comment}
-                            {description}
-                        </p>
+                        <p>{comment}{description}</p>
                     </div>
                     <div className="btn-con">
-                        <Button 
+                        {onEdit && (
+                            <Button
+                                icon={<span style={{ fontSize: '1.1rem' }}>✎</span>}
+                                bPad={'1rem'}
+                                bRad={'50%'}
+                                bg={'#3b3b9e'}
+                                color={'#fff'}
+                                iColor={'#fff'}
+                                hColor={'var(--color-green)'}
+                                onClick={() => onEdit()}
+                            />
+                        )}
+                        <Button
                             icon={trash}
                             bPad={'1rem'}
                             bRad={'50%'}
-                            bg={'var(--primary-color'}
+                            bg={'var(--primary-color)'}
                             color={'#fff'}
                             iColor={'#fff'}
                             hColor={'var(--color-green)'}
@@ -99,8 +89,8 @@ function IncomeItem({
 }
 
 const IncomeItemStyled = styled.div`
-    background: #FCF6F9;
-    border: 2px solid #FFFFFF;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
     box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
     border-radius: 20px;
     padding: 1rem;
@@ -109,31 +99,33 @@ const IncomeItemStyled = styled.div`
     align-items: center;
     gap: 1rem;
     width: 100%;
-    color: #222260;
-    .icon{
+    color: var(--text-primary);
+    transition: background 0.3s, border-color 0.3s;
+
+    .icon {
         width: 80px;
         height: 80px;
         border-radius: 20px;
-        background: #F5F5F5;
+        background: var(--bg-input);
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid #FFFFFF;
-        i{
-            font-size: 2.6rem;
-        }
+        border: 2px solid var(--border-color);
+        i { font-size: 2.6rem; }
     }
 
-    .content{
+    .content {
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: .2rem;
-        h5{
+
+        h5 {
             font-size: 1.3rem;
             padding-left: 2rem;
             position: relative;
-            &::before{
+            color: var(--text-heading);
+            &::before {
                 content: '';
                 position: absolute;
                 left: 0;
@@ -146,19 +138,19 @@ const IncomeItemStyled = styled.div`
             }
         }
 
-        .inner-content{
+        .inner-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            .text{
+            .text {
                 display: flex;
                 align-items: center;
                 gap: 1.5rem;
-                p{
+                p {
                     display: flex;
                     align-items: center;
                     gap: 0.5rem;
-                    color: var(--primary-color);
+                    color: var(--text-primary);
                     opacity: 0.8;
                 }
             }

@@ -1,7 +1,7 @@
-import React, {useState, useMemo} from 'react'
+import React, { useState, useMemo } from 'react'
 import styled from "styled-components";
 import bg from './img/bg.png'
-import {MainLayout} from './styles/Layouts'
+import { MainLayout } from './styles/Layouts'
 import Orb from './Components/Orb/Orb'
 import Navigation from './Components/Navigation/Navigation'
 import Dashboard from './Components/Dashboard/Dashboard';
@@ -9,38 +9,31 @@ import Income from './Components/Income/Income'
 import Expenses from './Components/Expenses/Expenses';
 import AllHistory from './Components/ViewTransactions/ViewTransactions'
 import FinancialSuggestion from './Components/FinancialSuggestion/FinancialSuggestion'
+import Budget from './Components/Budget/Budget';
+import Profile from './Profile';
 import { useGlobalContext } from './context/globalContext';
-import Homelog from './App';
+
 function SideNav() {
   const [active, setActive] = useState(1)
-
-  const global = useGlobalContext()
-  console.log(global);
+  const { darkMode } = useGlobalContext();
 
   const displayData = () => {
-    switch(active){
-      case 1:
-        return <Dashboard />
-      case 2:
-        return <Income />
-      case 3:
-        return <Expenses />
-      case 4:
-        return <AllHistory/>
-      case 5:
-        return <FinancialSuggestion />
-      default:
-        return <Dashboard />
-        
+    switch (active) {
+      case 1: return <Dashboard />
+      case 2: return <Income />
+      case 3: return <Expenses />
+      case 4: return <AllHistory />
+      case 5: return <FinancialSuggestion />
+      case 6: return <Budget />
+      case 7: return <Profile />
+      default: return <Dashboard />
     }
   }
 
-  const orbMemo = useMemo(() => {
-    return <Orb />
-  },[])
+  const orbMemo = useMemo(() => <Orb />, [])
 
   return (
-    <AppStyled bg={bg} className="App">
+    <AppStyled bg={bg} className={`App${darkMode ? ' dark' : ''}`}>
       {orbMemo}
       <MainLayout>
         <Navigation active={active} setActive={setActive} />
@@ -54,19 +47,20 @@ function SideNav() {
 
 const AppStyled = styled.div`
   height: 100vh;
-  ${'' /* background-image: url(${props => props.bg}); */}
-  ${'' /* background: rgba(250, 229, 250, 0.6); */}
   position: relative;
-  main{
+  background: var(--bg-body);
+  transition: background 0.3s;
+
+  main {
     flex: 1;
-    background: rgba(250, 229, 250, 0.6);
-    border: 3px solid #FFFFFF;
+    background: var(--main-bg);
+    border: 3px solid var(--main-border);
     backdrop-filter: blur(4.5px);
     border-radius: 32px;
     overflow-x: hidden;
-    &::-webkit-scrollbar{
-      width: 0;
-    }
+    overflow-y: auto;
+    transition: background 0.3s, border-color 0.3s;
+    &::-webkit-scrollbar { width: 0; }
   }
 `;
 

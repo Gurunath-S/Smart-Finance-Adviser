@@ -10,8 +10,6 @@ const ExpenseSchema = new mongoose.Schema({
     amount: {
         type: Number,
         required: true,
-        maxLength: 20,
-        trim: true
     },
     type: {
         type: String,
@@ -20,7 +18,6 @@ const ExpenseSchema = new mongoose.Schema({
     date: {
         type: Date,
         required: true,
-        trim: true
     },
     category: {
         type: String,
@@ -30,10 +27,14 @@ const ExpenseSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
-        maxLength: 2000000000,
+        maxLength: 500,  // Sensible limit — was 2,000,000,000
         trim: true
     },
-   userId: { type: String, required: true }
+    userId: {
+        type: String,
+        required: true,
+        index: true  // Index for fast user-based queries
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);
