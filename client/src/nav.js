@@ -1,86 +1,56 @@
-import React, { useState, useEffect } from "react";
-import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Login from "./Login";
-import SideNav from "./into";
-import AdminDashboard from "./Admin/AdminDashboard";
-import Homelog from "./App";
-import ForgotPassword from "./ForgotPassword";
-import ResetPassword from "./ResetPassword";
+import React from "react";
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import AuthPage from "./features/auth/AuthPage";
+import AdminDashboard from "./features/admin/AdminDashboard";
+import DashboardLayout from "./components/layout/DashboardLayout";
+import ForgotPassword from "./features/auth/ForgotPassword";
+import ResetPassword from "./features/auth/ResetPassword";
+import { Loader2 } from "lucide-react";
 
-/**
- * Check if the JWT token is present AND not expired.
- * Decodes the payload (base64) without any library — no verification needed here,
- * just to read the `exp` field for early client-side redirect.
- */
-const isTokenValid = () => {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    if (!payload.exp) return true; // no expiry field — assume valid
-    return payload.exp * 1000 > Date.now(); // exp is in seconds
-  } catch {
-    return false; // malformed token
-  }
-};
-
-/** Clears stale token and redirects to login */
-const clearAuth = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("username");
-};
-
-/**
- * Auth guard — redirects to "/" if token is missing or expired.
- * Rechecks on every render so expiry is caught when navigating back to the tab.
- */
 const ProtectedRoute = ({ children }) => {
-  if (!isTokenValid()) {
-    clearAuth();
-    return <Navigate to="/" replace />;
-  }
-  return children;
-};
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-const ScreenSizeWarning = () => {
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => setIsSmallScreen(window.innerWidth < 1200);
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
-  if (isSmallScreen) {
+  if (loading) {
     return (
-      <div style={{
-        position: "fixed", top: 0, left: 0, width: "100%", height: "100vh",
-        backgroundColor: "black", color: "white",
-        display: "flex", justifyContent: "center", alignItems: "center",
-        fontSize: "20px", textAlign: "center", zIndex: 9999,
-      }}>
-        This website is not supported on small screens.
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     );
   }
-  return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return null;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
 };
 
 const Nav = () => {
   return (
     <Router>
-      <ScreenSizeWarning />
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={isTokenValid() ? <Navigate to="/dashboard" replace /> : <Homelog />} />
-        <Route path="/" element={isTokenValid() ? <Navigate to="/dashboard" replace /> : <Homelog />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />
+        <Route path="/" element={<PublicRoute><AuthPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-        {/* Protected routes — redirects to "/" if token is absent or expired */}
-        <Route path="/dashboard" element={<ProtectedRoute><SideNav /></ProtectedRoute>} />
+        {/* Protected routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />
         <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
