@@ -8,8 +8,8 @@ Smart-Finance-Adviser is a full-stack MERN web application that helps users mana
 
 ## 🔧 Tech Stack
 
-- **Frontend:** React  
-- **Backend:** Node.js, Express  
+- **Client (Frontend):** React  
+- **Server (Backend):** Node.js, Express  
 - **Database:** MongoDB  
 - **Authentication:** JWT  
 
@@ -58,19 +58,19 @@ Smart-Finance-Adviser is a full-stack MERN web application that helps users mana
 ## 🚀 Getting Started
 
 ### Clone the Repository
-### frontend
+### client
 ```bash
 git clone https://github.com/your-username/smart-finance-adviser.git
-cd frontend
+cd client
 npm i
-npm start
+npm run dev
 ```
 
-### backend
+### server
 ```bash
-cd backend
+cd server
 npm i
-npm start
+npm run dev
 ```
 ### 🤝 Contributing
 
