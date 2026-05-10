@@ -28,15 +28,18 @@ const Sidebar = ({ active, setActive, isOpen, setIsOpen }) => {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isOpen ? 280 : 80 }}
+      animate={{ 
+        width: isOpen ? 280 : (window.innerWidth < 768 ? 0 : 80),
+        x: isOpen ? 0 : (window.innerWidth < 768 ? -280 : 0)
+      }}
       className={cn(
-        "relative z-20 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out",
-        !isOpen && "items-center"
+        "fixed md:relative z-30 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out shadow-2xl md:shadow-none",
+        !isOpen && "md:items-center overflow-hidden"
       )}
     >
       {/* Logo Section */}
       <div className={cn(
-        "h-16 flex items-center px-6 mb-4 border-b border-slate-100 dark:border-slate-800/50",
+        "h-16 flex items-center px-6 mb-4 border-b border-border/50",
         !isOpen && "px-0 justify-center"
       )}>
         <div className="flex items-center space-x-3">

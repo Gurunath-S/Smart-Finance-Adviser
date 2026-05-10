@@ -8,8 +8,7 @@ import { cn } from '../../lib/utils';
 import * as XLSX from 'xlsx';
 
 const ViewTransactions = () => {
-    const { incomes, expenses, getIncomes, getExpenses } = useGlobalContext();
-    const [search, setSearch] = useState('');
+    const { incomes, expenses, getIncomes, getExpenses, searchQuery } = useGlobalContext();
     const [filterType, setFilterType] = useState('all'); // all, income, expense
     const [page, setPage] = useState(1);
     const limit = 10;
@@ -23,8 +22,8 @@ const ViewTransactions = () => {
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const filtered = combined.filter(t => {
-        const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
-                             t.category?.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             t.category?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = filterType === 'all' || t.type === filterType;
         return matchesSearch && matchesType;
     });
@@ -61,14 +60,8 @@ const ViewTransactions = () => {
             <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="bg-slate-50 dark:bg-slate-900/50 space-y-4">
                     <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                                placeholder="Search by title or category..." 
-                                className="pl-10" 
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
+                        <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                            Quick Filters
                         </div>
                         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                             {['all', 'income', 'expense'].map((t) => (

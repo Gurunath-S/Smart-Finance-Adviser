@@ -51,19 +51,19 @@ const Dashboard = () => {
         <p className="text-slate-500 dark:text-slate-400">Welcome back! Here's what's happening with your money.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {stats.map((stat, i) => (
-          <Card key={i} className="overflow-hidden border-none shadow-md">
+          <Card key={i} className="overflow-hidden border-none shadow-xl bg-card/50 backdrop-blur-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.title}</CardTitle>
-              <div className={cn(stat.bg, "p-2 rounded-lg")}>{stat.icon}</div>
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">{stat.title}</CardTitle>
+              <div className={cn(stat.bg, "p-2.5 rounded-xl shadow-inner")}>{stat.icon}</div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">₹{stat.amount.toLocaleString()}</div>
-              <div className="flex items-center text-xs mt-1">
-                <ArrowUpRight className={cn("h-4 w-4 mr-1", stat.color)} />
-                <span className={cn("font-medium mr-1", stat.color)}>{stat.trend}</span>
-                <span className="text-slate-400">from last month</span>
+              <div className="text-3xl font-black tracking-tight text-foreground">₹{stat.amount.toLocaleString()}</div>
+              <div className="flex items-center text-[10px] mt-2 font-bold uppercase tracking-wider">
+                <ArrowUpRight className={cn("h-3 w-3 mr-1", stat.color)} />
+                <span className={cn("mr-1", stat.color)}>{stat.trend}</span>
+                <span className="text-muted-foreground opacity-60">from last month</span>
               </div>
             </CardContent>
           </Card>
@@ -98,17 +98,17 @@ const Dashboard = () => {
 };
 
 const RangeItem = ({ label, items }) => (
-  <div className="space-y-2">
-    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label} Range</div>
-    <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+  <div className="space-y-3">
+    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-70">{label} Range</div>
+    <div className="flex justify-between items-center p-4 bg-muted/50 rounded-xl border border-border/50 backdrop-blur-sm">
       <div className="flex flex-col">
-        <span className="text-[10px] text-slate-400 uppercase">Min</span>
-        <span className="font-bold">₹{items.length ? Math.min(...items.map(i => i.amount)).toLocaleString() : 0}</span>
+        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight mb-1">Min</span>
+        <span className="font-black text-foreground">₹{items.length ? Math.min(...items.map(i => i.amount)).toLocaleString() : 0}</span>
       </div>
-      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+      <div className="h-10 w-px bg-border/50" />
       <div className="flex flex-col items-end">
-        <span className="text-[10px] text-slate-400 uppercase">Max</span>
-        <span className="font-bold">₹{items.length ? Math.max(...items.map(i => i.amount)).toLocaleString() : 0}</span>
+        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight mb-1">Max</span>
+        <span className="font-black text-foreground">₹{items.length ? Math.max(...items.map(i => i.amount)).toLocaleString() : 0}</span>
       </div>
     </div>
   </div>

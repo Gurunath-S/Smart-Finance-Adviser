@@ -11,6 +11,7 @@ export const GlobalProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Auth headers helper
   const getAuthHeaders = useCallback(() => {
@@ -226,6 +227,7 @@ export const GlobalProvider = ({ children }) => {
       budgets, getBudgets, saveBudget, deleteBudget,
       fetchSuggestions, saveSuggestions,
       updateProfile,
+      searchQuery, setSearchQuery,
     }}>
       {children}
     </GlobalContext.Provider>

@@ -1,13 +1,14 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
+import { motion } from 'framer-motion';
 
 const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', ...props }, ref) => {
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
-    outline: 'border border-slate-300 bg-transparent hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800',
-    ghost: 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
+    primary: 'bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20',
+    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+    outline: 'border border-border bg-background hover:bg-accent hover:text-accent-foreground',
+    ghost: 'hover:bg-accent hover:text-accent-foreground',
+    danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   };
 
   const sizes = {
@@ -17,10 +18,12 @@ const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', 
   };
 
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -2 }}
       ref={ref}
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
         variants[variant],
         sizes[size],
         className

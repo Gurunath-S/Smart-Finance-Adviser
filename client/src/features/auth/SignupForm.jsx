@@ -39,13 +39,7 @@ const SignupForm = ({ onToggle }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-sm">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Create an account</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Enter your details below to create your account
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6 w-full">
       <div className="space-y-4">
         <div className="relative">
           <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
