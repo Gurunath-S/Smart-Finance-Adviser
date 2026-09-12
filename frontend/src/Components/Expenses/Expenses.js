@@ -2,16 +2,17 @@ import React, { useEffect } from 'react'
 import styled from 'styled-components'
 import { useGlobalContext } from '../../context/globalContext';
 import { InnerLayout } from '../../styles/Layouts';
-import Form from '../Form/Form';
 import IncomeItem from '../IncomeItem/IncomeItem';
 import ExpenseForm from './ExpenseForm';
 
 function Expenses() {
-    const {addIncome,expenses, getExpenses, deleteExpense, totalExpenses} = useGlobalContext()
+    const { expenses, getExpenses, deleteExpense, totalExpenses } = useGlobalContext()
 
-    useEffect(() =>{
+    useEffect(() => {
         getExpenses()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
     return (
         <ExpenseStyled>
             <InnerLayout>
@@ -22,22 +23,27 @@ function Expenses() {
                         <ExpenseForm />
                     </div>
                     <div className="incomes">
-                        {expenses.map((income) => {
-                            const {_id, title, amount, date, category, description, type} = income;
-                            console.log(income)
-                            return <IncomeItem
-                                key={_id}
-                                id={_id} 
-                                title={title} 
-                                description={description} 
-                                amount={amount} 
-                                date={date} 
-                                type={type}
-                                category={category} 
-                                indicatorColor="var(--color-green)"
-                                deleteItem={deleteExpense}
-                            />
-                        })}
+                        {expenses.length === 0 ? (
+                            <p style={{ textAlign: "center", color: "rgba(34, 34, 96, 0.6)", padding: "2rem" }}>
+                                No expenses recorded yet. Add your first expense using the form.
+                            </p>
+                        ) : (
+                            expenses.map((expense) => {
+                                const {_id, title, amount, date, category, description, type} = expense;
+                                return <IncomeItem
+                                    key={_id}
+                                    id={_id} 
+                                    title={title} 
+                                    description={description} 
+                                    amount={amount} 
+                                    date={date} 
+                                    type={type || 'expense'}
+                                    category={category} 
+                                    indicatorColor="var(--color-delete)"
+                                    deleteItem={deleteExpense}
+                                />
+                            })
+                        )}
                     </div>
                 </div>
             </InnerLayout>
@@ -63,7 +69,7 @@ const ExpenseStyled = styled.div`
         span{
             font-size: 2.5rem;
             font-weight: 800;
-            color: var(--color-green);
+            color: var(--color-delete);
         }
     }
     .income-content{

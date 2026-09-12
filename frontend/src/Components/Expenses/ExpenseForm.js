@@ -24,16 +24,40 @@ function ExpenseForm() {
         setError('')
     }
 
-    const handleSubmit = e => {
+    const handleSubmit = async e => {
         e.preventDefault()
-        addExpense(inputState)
-        setInputState({
-            title: '',
-            amount: '',
-            date: '',
-            category: '',
-            description: '',
-        })
+
+        if (!title.trim()) {
+            setError('Title is required!')
+            return
+        }
+
+        const numAmount = parseFloat(amount)
+        if (!amount || isNaN(numAmount) || numAmount <= 0) {
+            setError('Amount must be a positive number!')
+            return
+        }
+
+        if (!date) {
+            setError('Date is required!')
+            return
+        }
+
+        if (!category) {
+            setError('Category is required!')
+            return
+        }
+
+        const success = await addExpense({ ...inputState, amount: numAmount })
+        if (success) {
+            setInputState({
+                title: '',
+                amount: '',
+                date: '',
+                category: '',
+                description: '',
+            })
+        }
     }
 
     return (
