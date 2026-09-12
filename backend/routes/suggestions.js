@@ -13,11 +13,15 @@ const cohereClient = new CohereClientV2({
 // Generate suggestions using Cohere API (protected)
 router.post('/get-suggestions', verifyToken, async (req, res) => {
   try {
-    const { balance, income, expenses } = req.body;
+    const { balance = 0, income = 0, expenses = 0 } = req.body;
 
-    const prompt = `I have a balance of ${balance}, with a monthly income of ${income} and monthly expenses of ${expenses}.
+    const parsedBalance = Number(balance) || 0;
+    const parsedIncome = Number(income) || 0;
+    const parsedExpenses = Number(expenses) || 0;
+
+    const prompt = `I have a balance of ${parsedBalance}, with a monthly income of ${parsedIncome} and monthly expenses of ${parsedExpenses}.
 Suggest a structured financial plan focusing only on the most suitable investment options from the following: SIP, SWP, Fixed Deposit, Mutual Funds, PPF, and Gold.
-Evaluate which of these options best fit my financial status and goals, considering savings, income, and expenses. Provide clear monthly allocation suggestions and a brief conclusion. With only 3 points and with an conculsion  max 200 words`;
+Evaluate which of these options best fit my financial status and goals, considering savings, income, and expenses. Provide clear monthly allocation suggestions and a brief conclusion. With only 3 points and with a conclusion max 200 words.`;
 
     const response = await cohereClient.chat({
       model: 'command-a-03-2025',
@@ -38,12 +42,12 @@ Evaluate which of these options best fit my financial status and goals, consider
     const suggestionsArray = aiMessage.split("\n").map(item => item.trim()).filter(Boolean);
 
     res.status(200).json({
-      balance,
+      balance: parsedBalance,
       suggestions: suggestionsArray,
     });
   } catch (error) {
     console.error("Error fetching suggestions:", error.message);
-    res.status(500).json({ message: "Internal Server Error." });
+    res.status(500).json({ message: "Failed to generate suggestions. Please ensure AI key is active." });
   }
 });
 
@@ -59,8 +63,9 @@ router.post('/saveSuggestions', verifyToken, async (req, res) => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
     const newSuggestion = new Suggestion({
+      userId: req.userId,
       suggestions,
-      itemsUsedCount,
+      itemsUsedCount: itemsUsedCount || suggestions.length,
       date: today,
     });
 
@@ -68,8 +73,22 @@ router.post('/saveSuggestions', verifyToken, async (req, res) => {
 
     res.status(200).json({ message: 'Suggestions saved successfully.' });
   } catch (error) {
-    console.error(error);
+    console.error("Error saving suggestions:", error.message);
     res.status(500).json({ error: 'Server Error.' });
+  }
+});
+
+// Get user's saved suggestions history (protected)
+router.get('/get-saved-suggestions', verifyToken, async (req, res) => {
+  try {
+    const history = await Suggestion.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+    res.status(200).json(history);
+  } catch (error) {
+    console.error("Error retrieving suggestions history:", error.message);
+    res.status(500).json({ error: 'Server Error' });
   }
 });
 
