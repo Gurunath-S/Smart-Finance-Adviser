@@ -9,13 +9,9 @@ import Income from './Components/Income/Income'
 import Expenses from './Components/Expenses/Expenses';
 import AllHistory from './Components/ViewTransactions/ViewTransactions'
 import FinancialSuggestion from './Components/FinancialSuggestion/FinancialSuggestion'
-import { useGlobalContext } from './context/globalContext';
-import Homelog from './App';
+
 function SideNav() {
   const [active, setActive] = useState(1)
-
-  const global = useGlobalContext()
-  console.log(global);
 
   const displayData = () => {
     switch(active){

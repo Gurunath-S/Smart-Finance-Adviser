@@ -55,12 +55,14 @@ function Navigation({ active, setActive }) {
         }
     };
 
+    const role = localStorage.getItem("role");
+
     const handleLogout = () => {
         localStorage.removeItem('token'); 
         localStorage.removeItem("username");
         localStorage.removeItem("profileImage");
-        navigate("/");
-        alert(`You have been logged out from ID ${username}`);
+        localStorage.removeItem("role");
+        navigate("/login");
     };
 
     return (
@@ -108,7 +110,7 @@ function Navigation({ active, setActive }) {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
             >
-                {menuItems.map((item, index) => (
+                {menuItems.map((item) => (
                     <motion.li
                         key={item.id}
                         onClick={() => setActive(item.id)}
@@ -130,6 +132,15 @@ function Navigation({ active, setActive }) {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.6 }}
             >
+                {role === "admin" && (
+                    <button
+                        type="button"
+                        onClick={() => navigate("/admin-dashboard")}
+                        style={{ marginBottom: "0.5rem", backgroundColor: "#6c5ce7" }}
+                    >
+                        ⚙️ Admin Panel
+                    </button>
+                )}
                 <button onClick={handleLogout}> {signout} Logout</button>
             </motion.div>
         </NavStyled>
