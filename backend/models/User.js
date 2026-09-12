@@ -8,23 +8,23 @@ const UserSchema = new mongoose.Schema(
     userId: { type: String, unique: true },
     password: { type: String, required: true },
     profileImage: { type: String, default: "" },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
   },
   { timestamps: true }
 );
 
-// Use fewer rounds in dev for speed; keep 10 in production for security
-const SALT_ROUNDS = process.env.NODE_ENV === 'production' ? 10 : 4;
+// Standard 10 bcrypt salt rounds for secure password hashing
+const SALT_ROUNDS = 10;
 
-// Automatically generate userId before saving
+// Automatically generate userId and hash password before saving
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
-  this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
-
   if (!this.userId) {
     this.userId = `${this.username}-${Date.now()}`;
   }
 
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
   next();
 });
 
