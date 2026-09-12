@@ -3,7 +3,8 @@ const User = require("../models/User");
 const ExpenseSchema = require("../models/ExpenseModel");
 const IncomeSchema = require("../models/IncomeModel");
 const Transaction = require("../models/Transaction");
-const verifyToken = require("../middleware/verifyToken");
+const { verifyToken, verifyAdmin } = require("../middleware/verifyToken");
+const Suggestion = require("../models/Suggestion");
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
@@ -26,12 +27,8 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// Admin-only guard — user must be authenticated
-// For a full role-based system, also check req.user.role === 'admin'
-router.use(verifyToken);
-
-// PUT update profile image
-router.put('/update-profile-image', upload.single('image'), async (req, res) => {
+// PUT update profile image (User self-service)
+router.put('/update-profile-image', verifyToken, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No image file provided" });
@@ -60,8 +57,8 @@ router.put('/update-profile-image', upload.single('image'), async (req, res) => 
   }
 });
 
-// GET all users
-router.get("/get-users", async (req, res) => {
+// GET all users (Admin only)
+router.get("/get-users", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({}, "-password"); // Never return passwords
     res.status(200).json(users);
@@ -70,16 +67,26 @@ router.get("/get-users", async (req, res) => {
   }
 });
 
-// POST add a new user
-router.post("/add-users", async (req, res) => {
-  const { username, email, password } = req.body;
+// POST add a new user (Admin only)
+router.post("/add-users", verifyToken, verifyAdmin, async (req, res) => {
+  const { username, email, password, role } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    const newUser = new User({ username, email, password });
+    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
+    if (existing) {
+      return res.status(400).json({ message: "User already exists with this email or username" });
+    }
+
+    const newUser = new User({ 
+      username, 
+      email: email.toLowerCase(), 
+      password,
+      role: role === 'admin' ? 'admin' : 'user'
+    });
     await newUser.save();
     const { password: _, ...safeUser } = newUser.toObject();
     res.status(201).json(safeUser);
@@ -88,8 +95,8 @@ router.post("/add-users", async (req, res) => {
   }
 });
 
-// DELETE a user
-router.delete("/delete-users/:id", async (req, res) => {
+// DELETE a user (Admin only)
+router.delete("/delete-users/:id", verifyToken, verifyAdmin, async (req, res) => {
   const userId = req.params.id;
 
   try {
@@ -97,22 +104,28 @@ router.delete("/delete-users/:id", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    // Delete related transactions
-    await Transaction.deleteMany({ userId: user._id });
-    res.status(200).json({ message: "User deleted successfully" });
+    
+    // Cascade delete related incomes, expenses, and suggestions
+    await Promise.all([
+      IncomeSchema.deleteMany({ userId: user._id.toString() }),
+      ExpenseSchema.deleteMany({ userId: user._id.toString() }),
+      Suggestion.deleteMany({ userId: user._id.toString() })
+    ]);
+
+    res.status(200).json({ message: "User and associated data deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Failed to delete user", error: err.message });
   }
 });
 
-// GET transactions for a specific user (admin view)
-router.get('/get-user-transactions/:userId', async (req, res) => {
+// GET transactions for a specific user (Admin only)
+router.get('/get-user-transactions/:userId', verifyToken, verifyAdmin, async (req, res) => {
   const { userId } = req.params;
 
   try {
     const [expenses, incomes] = await Promise.all([
-      ExpenseSchema.find({ userId }),
-      IncomeSchema.find({ userId })
+      ExpenseSchema.find({ userId }).sort({ date: -1 }).lean(),
+      IncomeSchema.find({ userId }).sort({ date: -1 }).lean()
     ]);
 
     return res.status(200).json({ expenses, incomes });
