@@ -10,7 +10,8 @@ function Income() {
 
     useEffect(() => {
         getIncomes();
-    }, [getIncomes]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <IncomeStyled>
@@ -24,23 +25,29 @@ function Income() {
                         <Form />
                     </div>
                     <div className="incomes">
-                        {incomes.map((income) => {
-                            const { _id, title, amount, date, category, description, type } = income;
-                            return (
-                                <IncomeItem
-                                    key={_id}
-                                    id={_id}
-                                    title={title}
-                                    description={description}
-                                    amount={amount}
-                                    date={date}
-                                    type={type}
-                                    category={category}
-                                    indicatorColor="var(--color-green)"
-                                    deleteItem={deleteIncome}
-                                />
-                            );
-                        })}
+                        {incomes.length === 0 ? (
+                            <p style={{ textAlign: "center", color: "rgba(34, 34, 96, 0.6)", padding: "2rem" }}>
+                                No income records found. Add your first income using the form.
+                            </p>
+                        ) : (
+                            incomes.map((income) => {
+                                const { _id, title, amount, date, category, description, type } = income;
+                                return (
+                                    <IncomeItem
+                                        key={_id}
+                                        id={_id}
+                                        title={title}
+                                        description={description}
+                                        amount={amount}
+                                        date={date}
+                                        type={type}
+                                        category={category}
+                                        indicatorColor="var(--color-green)"
+                                        deleteItem={deleteIncome}
+                                    />
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </InnerLayout>

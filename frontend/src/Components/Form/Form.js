@@ -23,23 +23,40 @@ function Form() {
     setError(''); // Clear error on input change
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
-    // Validate that the amount is a positive number
-    if (parseFloat(amount) <= 0 || isNaN(parseFloat(amount))) {
+    if (!title.trim()) {
+      setError('Title is required!');
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (!amount || isNaN(numAmount) || numAmount <= 0) {
       setError('Amount must be a positive number!');
       return;
     }
 
-    addIncome(inputState); // Pass inputState to addIncome function
-    setInputState({
-      title: '',
-      amount: '',
-      date: '',
-      category: '',
-      description: '',
-    });
+    if (!date) {
+      setError('Date is required!');
+      return;
+    }
+
+    if (!category) {
+      setError('Category is required!');
+      return;
+    }
+
+    const success = await addIncome({ ...inputState, amount: numAmount });
+    if (success) {
+      setInputState({
+        title: '',
+        amount: '',
+        date: '',
+        category: '',
+        description: '',
+      });
+    }
   };
 
   return (
