@@ -8,46 +8,50 @@ const ADMIN_URL = `${API_BASE_URL}/users/`; // user management
 
 const GlobalContext = React.createContext();
 
-export const GlobalProvider = ({ children, manId, setManId }) => {
+export const GlobalProvider = ({ children }) => {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [users, setUsers] = useState([]);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [transactions, setTransactions] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [message, setMessage] = useState(null);
 
   // Helper function to add token to headers
-  const getAuthHeaders = () => ({
-    headers: {
-      Authorization: `Bearer ${token || localStorage.getItem("token")}`,
-    },
-  });
+  const getAuthHeaders = () => {
+    const currentToken = token || localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+      },
+    };
+  };
 
   // Check if token is valid
-  const isTokenValid = token && token.trim() !== "";
+  const checkToken = () => {
+    const currentToken = token || localStorage.getItem("token");
+    return Boolean(currentToken && currentToken.trim() !== "");
+  };
 
   // Add Income function
   const addIncome = async (income) => {
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
-      return;
+      return false;
     }
     try {
       await axios.post(`${V1_URL}add-income`, income, getAuthHeaders());
-      getIncomes();
+      await getIncomes();
+      setError(null);
+      return true;
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
+      return false;
     }
   };
 
   // Get Incomes function
   const getIncomes = async () => {
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
       return;
     }
@@ -61,13 +65,13 @@ export const GlobalProvider = ({ children, manId, setManId }) => {
 
   // Delete Income function
   const deleteIncome = async (id) => {
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
       return;
     }
     try {
       await axios.delete(`${V1_URL}delete-income/${id}`, getAuthHeaders());
-      getIncomes();
+      await getIncomes();
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
     }
@@ -82,23 +86,26 @@ export const GlobalProvider = ({ children, manId, setManId }) => {
   const addExpense = async (expense) => {
     if (expense.amount <= 0) {
       setError("Amount must be a positive number!");
-      return;
+      return false;
     }
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
-      return;
+      return false;
     }
     try {
       await axios.post(`${V1_URL}add-expense`, expense, getAuthHeaders());
-      getExpenses();
+      await getExpenses();
+      setError(null);
+      return true;
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
+      return false;
     }
   };
 
   // Get Expenses function
   const getExpenses = async () => {
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
       return;
     }
@@ -112,13 +119,13 @@ export const GlobalProvider = ({ children, manId, setManId }) => {
 
   // Delete Expense function
   const deleteExpense = async (id) => {
-    if (!isTokenValid) {
+    if (!checkToken()) {
       setError("Authorization token is missing or invalid.");
       return;
     }
     try {
       await axios.delete(`${V1_URL}delete-expense/${id}`, getAuthHeaders());
-      getExpenses();
+      await getExpenses();
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
     }
@@ -169,10 +176,12 @@ export const GlobalProvider = ({ children, manId, setManId }) => {
   const deleteUser = async (id) => {
     try {
       await axios.delete(`${ADMIN_URL}delete-users/${id}`, getAuthHeaders());
-      setUsers(users.filter((user) => user._id !== id));
+      setUsers((prev) => prev.filter((user) => user._id !== id));
       setError("");
+      return true;
     } catch (err) {
       setError("Error deleting user");
+      return false;
     }
   };
 
