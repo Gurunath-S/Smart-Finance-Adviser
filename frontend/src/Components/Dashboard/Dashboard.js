@@ -12,7 +12,13 @@ function Dashboard() {
     useEffect(() => {
         getIncomes()
         getExpenses()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    const minIncome = incomes.length ? Math.min(...incomes.map(item => item.amount)) : 0;
+    const maxIncome = incomes.length ? Math.max(...incomes.map(item => item.amount)) : 0;
+    const minExpense = expenses.length ? Math.min(...expenses.map(item => item.amount)) : 0;
+    const maxExpense = expenses.length ? Math.max(...expenses.map(item => item.amount)) : 0;
 
     return (
         <DashboardStyled>
@@ -44,23 +50,15 @@ function Dashboard() {
                     </div>
                     <div className="history-con">
                         <History />
-                        <h2 className="salary-title">Min <span>Salary</span>Max</h2>
+                        <h2 className="salary-title">Min <span>Income</span>Max</h2>
                         <div className="salary-item">
-                            <p>
-                                ${Math.min(...incomes.map(item => item.amount))}
-                            </p>
-                            <p>
-                                ${Math.max(...incomes.map(item => item.amount))}
-                            </p>
+                            <p>${minIncome}</p>
+                            <p>${maxIncome}</p>
                         </div>
                         <h2 className="salary-title">Min <span>Expense</span>Max</h2>
                         <div className="salary-item">
-                            <p>
-                                ${Math.min(...expenses.map(item => item.amount))}
-                            </p>
-                            <p>
-                                ${Math.max(...expenses.map(item => item.amount))}
-                            </p>
+                            <p>${minExpense}</p>
+                            <p>${maxExpense}</p>
                         </div>
                     </div>
                 </div>
@@ -71,7 +69,7 @@ function Dashboard() {
 
 const DashboardStyled = styled.div`
     padding: 2rem;
-    background: rgba(250, 229, 250, -2);
+    background: transparent;
 
     .stats-con {
         background: transparent;
