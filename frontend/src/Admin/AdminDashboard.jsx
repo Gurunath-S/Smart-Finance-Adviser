@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGlobalContext } from "../context/globalContext";
 import * as XLSX from "xlsx";
+import axios from "axios";
+import { API_BASE_URL } from "../config";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
-  const { getUsers, users, addUser, deleteUser, fetchUserTransactions, getExpenses, transactions } = useGlobalContext();
+  const { getUsers, users, addUser, deleteUser, fetchUserTransactions, transactions } = useGlobalContext();
+  const navigate = useNavigate();
 
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "" });
   const [selectedUser, setSelectedUser] = useState(null);
   const [showTransactions, setShowTransactions] = useState(false);
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [reportType, setReportType] = useState("yearly");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -22,9 +25,8 @@ const AdminDashboard = () => {
   
   useEffect(() => {
     getUsers();
-    getExpenses();
-    
-  }, [getUsers, getExpenses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleEmailChange = (e) => {
     setEmailDetails({ ...emailDetails, [e.target.name]: e.target.value });
@@ -40,11 +42,10 @@ const AdminDashboard = () => {
     setNewUser({ username: "", email: "", password: "" });
   };
 
-  const handleDeleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
-      deleteUser(userId);
+      await deleteUser(userId);
       getUsers();
-      window.location.reload();
     }
   };
 
@@ -53,8 +54,6 @@ const AdminDashboard = () => {
     const user = users.find(user => user._id === userId);
     setSelectedUser(user);
     setShowTransactions(true);
-    setShowAllTransactions(false);
-    console.log(showAllTransactions)
     setReportType("yearly"); // Display yearly report by default
   };
 
@@ -70,11 +69,12 @@ const AdminDashboard = () => {
     setToDate("");
   };
 
-  const filterTransactionsByDate = (transactions, type) => {
+  const filterTransactionsByDate = (transactionsList, type) => {
+    if (!Array.isArray(transactionsList)) return [];
     if (fromDate && toDate) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
-      return transactions.filter(transaction => {
+      return transactionsList.filter(transaction => {
         const transactionDate = new Date(transaction.date);
         return transactionDate >= from && transactionDate <= to;
       });
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
         startDate = now;
     }
 
-    return transactions.filter(transaction => new Date(transaction.date) >= startDate);
+    return transactionsList.filter(transaction => new Date(transaction.date) >= startDate);
   };
 
   const combinedTransactions = () => {
@@ -106,12 +106,44 @@ const AdminDashboard = () => {
     return allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
-  const downloadExcelReport = (data, type) => {
+  const downloadExcelReport = (data, type, customUsername = null) => {
+    if (!data || data.length === 0) {
+      alert("No transactions available to download for this report.");
+      return;
+    }
+    const targetUsername = customUsername || selectedUser?.username || "User";
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `${type} Report`);
-    XLSX.writeFile(wb, `${selectedUser.username}_${type}_report.xlsx`);
-      };
+    XLSX.writeFile(wb, `${targetUsername}_${type}_report.xlsx`);
+  };
+
+  const handleDownloadUserReport = async (user) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${API_BASE_URL}/users/get-user-transactions/${user._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const userTransactions = response.data;
+      const allTx = [
+        ...(userTransactions?.expenses || []),
+        ...(userTransactions?.incomes || []),
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (allTx.length === 0) {
+        alert(`No transactions found for user ${user.username}`);
+        return;
+      }
+      downloadExcelReport(allTx, "All_Transactions", user.username);
+    } catch (err) {
+      alert("Error fetching user transactions for report");
+    }
+  };
 
   const sendEmail = async (e) => {
     e.preventDefault();
@@ -129,15 +161,17 @@ const AdminDashboard = () => {
     }
   
     try {
-      const response = await fetch("https://sfa-backend-1.onrender.com/send-email", {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/send-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          to: emailDetails.email,      // Map 'email' to 'to'
+          to: emailDetails.email,
           subject: emailDetails.subject,
-          text: emailDetails.message,  // Map 'message' to 'text'
+          text: emailDetails.message,
         }),
       });
   
@@ -157,7 +191,24 @@ const AdminDashboard = () => {
   
   return (
     <div className="admin-dashboard">
-      <h2>Admin Dashboard</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h2>Admin Dashboard</h2>
+        <button
+          onClick={() => navigate("/dashboard")}
+          style={{
+            backgroundColor: "#222260",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "0.6rem 1.2rem",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "0.95rem"
+          }}
+        >
+          ← Back to Dashboard
+        </button>
+      </div>
 
       <div>
         <h3>Add New User</h3>
@@ -221,22 +272,15 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => {
                     setEmailDetails({ ...emailDetails, email: user.email });
-                    window.scrollTo({
-                      top: document.querySelector(".admin-dashboard form[onSubmit='sendEmail']").offsetTop,
-                      behavior: "smooth",
-                    });
+                    const emailForm = document.querySelector(".admin-dashboard form");
+                    if (emailForm) {
+                      emailForm.scrollIntoView({ behavior: "smooth" });
+                    }
                   }}
                 >
                   Email User
                 </button>
-                <button
-                  onClick={() =>
-                    downloadExcelReport(
-                      filterTransactionsByDate(combinedTransactions(), reportType),
-                      "Transactions"
-                    )
-                  }
-                >
+                <button onClick={() => handleDownloadUserReport(user)}>
                   Download Report
                 </button>
               </td>
