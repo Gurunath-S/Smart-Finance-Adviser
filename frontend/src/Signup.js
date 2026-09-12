@@ -2,11 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "./config";
-import styled from "styled-components";
 
-
-
-const Signup = () => {
+const Signup = ({ onSignupSuccess }) => {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -17,7 +14,7 @@ const Signup = () => {
     const { username, email, password } = formData;
 
     if (!username.trim()) return "Username is required";
-    if (username.length < 6) return "Username must be at least 6 characters long";
+    if (username.length < 3) return "Username must be at least 3 characters long";
     if (username.length > 20) return "Username must be less than 20 characters";
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return "Username can only contain letters, numbers, and underscores";
 
@@ -25,7 +22,7 @@ const Signup = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address";
 
     if (!password) return "Password is required";
-    if (password.length < 8) return "Password must be at least 8 characters long";
+    if (password.length < 6) return "Password must be at least 6 characters long";
 
     return "";
   };
@@ -55,10 +52,17 @@ const Signup = () => {
 
     try {
       await axios.post(`${API_BASE_URL}/auth/signup`, formData);
-      setSuccessMessage("Signup successful! Redirecting to login...");
+      setSuccessMessage("Signup successful! You can now sign in.");
       setFormData({ username: "", email: "", password: "" });
       localStorage.removeItem("token");
-      setTimeout(() => navigate("/login", window.location.reload(), { replace: true }), 1000);
+      setTimeout(() => {
+        setIsLoading(false);
+        if (onSignupSuccess) {
+          onSignupSuccess();
+        } else {
+          navigate("/login", { replace: true });
+        }
+      }, 1200);
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Signup failed. Please try again.";
       showValidationMessage(errorMsg);

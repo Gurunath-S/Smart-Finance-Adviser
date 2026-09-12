@@ -3,9 +3,6 @@ import axios from "axios";
 import { API_BASE_URL } from "./config";
 import { useNavigate } from "react-router-dom";
 import { useGlobalContext } from "./context/globalContext";
-import styled from "styled-components";
-
-
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
@@ -18,14 +15,18 @@ const Login = () => {
   // Validation functions
   const validateFields = () => {
     const { username, password } = formData;
+    const trimmed = username.trim();
 
-    if (!username.trim()) return "Username is required";
-    if (username.length < 6) return "Username must be at least 6 characters long";
-    if (username.length > 20) return "Username must be less than 20 characters";
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) return "Username can only contain letters, numbers, and underscores";
+    if (!trimmed) return "Username or email is required";
+
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    const isUsername = /^[a-zA-Z0-9_]{3,30}$/.test(trimmed);
+    if (!isEmail && !isUsername) {
+      return "Enter a valid username (letters, numbers, underscore) or email";
+    }
 
     if (!password) return "Password is required";
-    if (password.length < 8) return "Password must be at least 8 characters long";
+    if (password.length < 6) return "Password must be at least 6 characters long";
 
     return "";
   };
@@ -55,12 +56,13 @@ const Login = () => {
 
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, formData);
-      const { token } = response.data;
+      const { token, user } = response.data;
       setSuccessMessage("Login successful!");
       localStorage.setItem("token", token);
       setTokenAndSave(token);
-      localStorage.setItem("username", formData.username);
-      localStorage.setItem("profileImage", response.data.user.profileImage || "");
+      localStorage.setItem("username", user?.username || formData.username);
+      localStorage.setItem("role", user?.role || "user");
+      localStorage.setItem("profileImage", user?.profileImage || "");
       navigate("/dashboard");
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Login failed. Please try again.";
@@ -83,7 +85,7 @@ const Login = () => {
           <input
             type="text"
             name="username"
-            placeholder="Username"
+            placeholder="Username or Email"
             value={formData.username}
             onChange={handleChange}
             disabled={isLoading}
@@ -102,7 +104,14 @@ const Login = () => {
           />
         </div>
         
-        <a href="#" className="social-text forgot-password">Forgot password?</a>
+        <button
+          type="button"
+          className="social-text forgot-password"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "0.5rem 0", color: "#444" }}
+          onClick={() => alert("Please contact administrator to reset your password.")}
+        >
+          Forgot password?
+        </button>
 
         <input 
           type="submit" 

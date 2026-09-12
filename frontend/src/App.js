@@ -11,7 +11,7 @@ const Homelog = () => {
       <div className="forms-container">
         <div className="signin-signup">
           <Login />
-          <Signup />
+          <Signup onSignupSuccess={() => setSignUpMode(false)} />
         </div>
       </div>
 
