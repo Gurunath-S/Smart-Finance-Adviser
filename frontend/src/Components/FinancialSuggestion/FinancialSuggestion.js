@@ -25,12 +25,11 @@ const FinancialSuggestion = () => {
   const [calculatorResult, setCalculatorResult] = useState("");
   const [chartData, setChartData] = useState(null);
   const [pieData, setPieData] = useState(null);
-  const [error, setError] = useState([]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log("Updated Suggestions in State:", suggestions);
-    console.log("data sent:", totalIncome() - totalExpenses(), totalIncome(), totalExpenses())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestions]);
 
   const handleGetSuggestions = async () => {
@@ -47,7 +46,6 @@ const FinancialSuggestion = () => {
           : data.suggestions.split("\n").map(item => item.trim()).filter(Boolean);
 
         setSuggestions(suggestionsArray);
-        console.log("Suggestions set:", suggestionsArray);
 
         await saveSuggestions(suggestionsArray);
       } else {
@@ -106,10 +104,11 @@ const FinancialSuggestion = () => {
         resultData = [];
         for (let i = 0; i < N; i++) {
           remainingAmount = (remainingAmount - W) * (1 + R);
-          resultData.push(remainingAmount);
+          resultData.push(Math.max(0, remainingAmount));
         }
-        result = remainingAmount;
-        pieChartData = [P, P - result];
+        result = Math.max(0, remainingAmount);
+        const totalWithdrawn = W * N;
+        pieChartData = [result, totalWithdrawn];
         setCalculatorResult(`Remaining Value After Withdrawals: ₹${result.toFixed(2)}`);
         break;
 
@@ -208,11 +207,11 @@ const FinancialSuggestion = () => {
         {suggestions && suggestions.length > 0 && (
           <div className="suggestions">
             <h3>Suggestions:</h3>
-            <p>
+            <ul>
               {suggestions.map((suggestion, index) => (
-                <p key={index}>{suggestion}</p>
+                <li key={index}>{suggestion}</li>
               ))}
-            </p>
+            </ul>
           </div>
         )}
         {error && <div className="error-message">{error}</div>}
@@ -409,7 +408,7 @@ const FinancialSuggestionStyled = styled.div`
   }
 
   button:hover {
-    background:blue
+    background: #007bff;
     transform: translateY(-2px);
   }
 
