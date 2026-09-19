@@ -1,12 +1,13 @@
 {
   "expo": {
     "name": "Smart Finance Adviser",
-    "slug": "smart-finance-adviser",
+    "slug": "sfa",
     "scheme": "smartfinanceadviser",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "owner": "gururider35",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smartfinanceadviser.mobile"
@@ -36,6 +37,11 @@
       "expo-secure-store",
       "expo-updates",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "240b52ee-291a-4a58-83bc-aec2b07fa9eb"
+      }
+    }
   }
 }
