@@ -23,6 +23,13 @@ export const authService = {
     return response.data;
   },
 
+  async loginWithGoogle(idToken: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/google', {
+      idToken,
+    });
+    return response.data;
+  },
+
   async saveSession(token: string, user: User): Promise<void> {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
@@ -51,6 +58,29 @@ export const authService = {
       await SecureStore.deleteItemAsync(USER_KEY);
     } catch {
       // Ignore deletion errors
+    }
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore network errors during logout
+    } finally {
+      await this.clearSession();
+    }
+  },
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const response = await api.get<{ user: User }>('/auth/me');
+      if (response.data?.user) {
+        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(response.data.user));
+        return response.data.user;
+      }
+      return null;
+    } catch {
+      return null;
     }
   },
 };

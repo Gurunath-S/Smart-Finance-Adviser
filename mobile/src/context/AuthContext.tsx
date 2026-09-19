@@ -10,6 +10,7 @@ export interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (usernameOrEmail: string, password: string) => Promise<boolean>;
+  loginWithGoogle: (idToken: string) => Promise<boolean>;
   signup: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUserAvatar: (newImageUrl: string) => void;
@@ -23,6 +24,7 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   error: null,
   login: async () => false,
+  loginWithGoogle: async () => false,
   signup: async () => false,
   logout: async () => {},
   updateUserAvatar: () => {},
@@ -36,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
 
   const logout = useCallback(async () => {
-    await authService.clearSession();
+    await authService.logout();
     setToken(null);
     setUser(null);
     setError(null);
@@ -49,9 +51,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const storedToken = await authService.getStoredToken();
         const storedUser = await authService.getStoredUser();
 
-        if (storedToken && storedUser) {
+        if (storedToken) {
           setToken(storedToken);
           setUser(storedUser);
+
+          // Asynchronously refresh latest user profile from /auth/me
+          authService.getCurrentUser().then((freshUser) => {
+            if (freshUser) {
+              setUser(freshUser);
+            }
+          }).catch(() => {});
         }
       } catch (e) {
         console.warn('Failed to restore auth session:', e);
@@ -82,6 +91,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return true;
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Login failed. Please verify your credentials.';
+      setError(msg);
+      return false;
+    }
+  };
+
+  const loginWithGoogle = async (idToken: string): Promise<boolean> => {
+    setError(null);
+    try {
+      const response = await authService.loginWithGoogle(idToken);
+      setToken(response.token);
+      setUser(response.user);
+      await authService.saveSession(response.token, response.user);
+      return true;
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Google Sign-In failed. Please try again.';
       setError(msg);
       return false;
     }
@@ -123,6 +147,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         error,
         login,
+        loginWithGoogle,
         signup,
         logout,
         updateUserAvatar,
