@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
 import { API_BASE_URL } from "./config";
 import { useNavigate } from "react-router-dom";
 import { useGlobalContext } from "./context/globalContext";
@@ -58,11 +59,7 @@ const Login = () => {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, formData);
       const { token, user } = response.data;
       setSuccessMessage("Login successful!");
-      localStorage.setItem("token", token);
-      setTokenAndSave(token);
-      localStorage.setItem("username", user?.username || formData.username);
-      localStorage.setItem("role", user?.role || "user");
-      localStorage.setItem("profileImage", user?.profileImage || "");
+      setTokenAndSave(token, user);
       navigate("/dashboard");
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Login failed. Please try again.";
@@ -70,6 +67,29 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/google`, {
+        credential: credentialResponse.credential,
+      });
+      const { token, user } = response.data;
+      setSuccessMessage("Google login successful!");
+      setTokenAndSave(token, user);
+      navigate("/dashboard");
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || "Google sign-in failed. Please try again.";
+      showValidationMessage(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    showValidationMessage("Google sign-in could not be completed.");
   };
 
   return (
@@ -119,6 +139,20 @@ const Login = () => {
           className={`btn solid ${isLoading ? "loading" : ""}`} 
           disabled={isLoading} 
         />
+
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: '380px', margin: '1rem 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#ccc' }} />
+          <span style={{ padding: '0 10px', color: '#777', fontSize: '0.85rem' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: '#ccc' }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '1rem' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            shape="pill"
+          />
+        </div>
       </form>
     </>
   );
