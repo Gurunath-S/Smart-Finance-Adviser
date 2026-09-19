@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import axios from 'axios';
 import { API_BASE_URL } from "../config";
 
@@ -13,23 +13,72 @@ export const GlobalProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem("token")));
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
 
-  // Helper function to add token to headers
-  const getAuthHeaders = () => {
-    const currentToken = token || localStorage.getItem("token");
-    return {
-      headers: {
-        Authorization: `Bearer ${currentToken}`,
-      },
-    };
+  // Validate session on app launch via /api/auth/me (HTTP-only Cookie or Bearer Token)
+  const checkAuthSession = useCallback(async () => {
+    setIsAuthChecking(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/auth/me`);
+      if (response.data?.user) {
+        setCurrentUser(response.data.user);
+        setIsAuthenticated(true);
+        localStorage.setItem("username", response.data.user.username || "");
+        localStorage.setItem("role", response.data.user.role || "user");
+        localStorage.setItem("profileImage", response.data.user.profileImage || "");
+        return response.data.user;
+      }
+    } catch (err) {
+      setCurrentUser(null);
+      setIsAuthenticated(false);
+      setToken(null);
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("role");
+      localStorage.removeItem("profileImage");
+    } finally {
+      setIsAuthChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuthSession();
+  }, [checkAuthSession]);
+
+  // Logout session from both server (clears cookie) and client
+  const logoutSession = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/logout`);
+    } catch (e) {
+      // Ignore network errors on logout
+    }
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    setToken(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+    localStorage.removeItem("profileImage");
   };
 
-  // Check if token is valid
+  // Helper function to add token to headers (fallback when cookies are partitioned)
+  const getAuthHeaders = () => {
+    const currentToken = token || localStorage.getItem("token");
+    const headers = {};
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
+    }
+    return { headers };
+  };
+
+  // Check if session is authenticated
   const checkToken = () => {
     const currentToken = token || localStorage.getItem("token");
-    return Boolean(currentToken && currentToken.trim() !== "");
+    return Boolean(isAuthenticated || (currentToken && currentToken.trim() !== ""));
   };
 
   // Add Income function
@@ -225,10 +274,21 @@ export const GlobalProvider = ({ children }) => {
     }
   };
 
-  // Set token and store in localStorage
-  const setTokenAndSave = (newToken) => {
-    setToken(newToken);
-    localStorage.setItem("token", newToken);
+  // Set token and store user session
+  const setTokenAndSave = (newToken, newUser = null) => {
+    if (newToken) {
+      setToken(newToken);
+      localStorage.setItem("token", newToken);
+    }
+    if (newUser) {
+      setCurrentUser(newUser);
+      setIsAuthenticated(true);
+      localStorage.setItem("username", newUser.username || "");
+      localStorage.setItem("role", newUser.role || "user");
+      localStorage.setItem("profileImage", newUser.profileImage || "");
+    } else {
+      setIsAuthenticated(true);
+    }
   };
 
   return (
@@ -250,6 +310,11 @@ export const GlobalProvider = ({ children }) => {
         setError,
         token,
         setTokenAndSave,
+        currentUser,
+        isAuthenticated,
+        isAuthChecking,
+        checkAuthSession,
+        logoutSession,
         getUsers,
         users,
         addUser,

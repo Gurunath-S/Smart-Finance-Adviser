@@ -15,7 +15,7 @@ function Navigation({ active, setActive }) {
     const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
     const [errorMsg, setErrorMsg] = useState("");
     const fileInputRef = useRef(null);
-    const { totalIncome } = useGlobalContext();
+    const { totalIncome, logoutSession } = useGlobalContext();
 
     useEffect(() => {
         const savedUsername = localStorage.getItem("username");
@@ -57,11 +57,15 @@ function Navigation({ active, setActive }) {
 
     const role = localStorage.getItem("role");
 
-    const handleLogout = () => {
-        localStorage.removeItem('token'); 
-        localStorage.removeItem("username");
-        localStorage.removeItem("profileImage");
-        localStorage.removeItem("role");
+    const handleLogout = async () => {
+        if (logoutSession) {
+            await logoutSession();
+        } else {
+            localStorage.removeItem('token'); 
+            localStorage.removeItem("username");
+            localStorage.removeItem("profileImage");
+            localStorage.removeItem("role");
+        }
         navigate("/login");
     };
 
