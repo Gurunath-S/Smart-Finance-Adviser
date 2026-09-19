@@ -82,7 +82,8 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
     const clientId =
       process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
       process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+      googleClientId;
     if (!clientId) {
       Alert.alert(
         'Google Sign-Up',
