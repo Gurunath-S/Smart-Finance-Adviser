@@ -9,12 +9,18 @@ The mobile application connects directly to the existing **Node.js / Express / M
 ## 🚀 Key Features
 
 ### 1. 🔐 Authentication & Session Security
+* **Google OAuth 2.0**: One-tap "Continue with Google" sign-in & sign-up via `expo-auth-session`.
 * **JWT Token Storage**: Persisted securely using hardware-backed `expo-secure-store`.
 * **Auto Session Recovery**: Seamless auto-login on app launch with token validation.
 * **Auto-Logout on 401**: Interceptor flushes expired tokens and resets navigation stack.
-* **Dual Login Support**: Sign in using either username or email address.
+* **Dual Login Support**: Sign in using username, email, or Google account.
 
-### 2. 📊 Executive Dashboard
+### 2. ⚡ Over-The-Air (OTA) Updates & In-App Prompt
+* **EAS Updates**: Instant remote code deployments via Expo Application Services without app store review.
+* **Live Update Prompt Modal**: Detects new published bundles on app launch and foreground resume, prompting the user to update.
+* **CI/CD Pipeline**: GitHub Actions workflow automatically deploys OTA updates to the production channel on push to `main`.
+
+### 3. 📊 Executive Dashboard
 * **Dynamic Net Balance**: Indian Rupee (`₹`) formatted summary with positive/negative tracking.
 * **Income vs. Expense Breakdown**: Monthly metrics with savings rate % and expense ratio %.
 * **Interactive Financial Flow Bar Chart**: Visualizes cash inflows vs. outflows.
@@ -22,27 +28,27 @@ The mobile application connects directly to the existing **Node.js / Express / M
 * **Quick Action FAB**: Instant bottom sheet modal for recording quick income or expense transactions.
 * **Pull-to-Refresh**: Real-time sync with backend database.
 
-### 3. 💸 Transaction Passbook & Ledger
+### 4. 💸 Transaction Passbook & Ledger
 * **Unified Feed**: Combines incomes and expenses into a single chronologically sorted ledger.
 * **Instant Filtering**: Switch between `All`, `Incomes (₹)`, and `Expenses (₹)`.
 * **Search by Keyword**: Filter by title or description in real time.
 * **Date Range Filter**: Filter records by `All Time`, `This Month`, or `Last 30 Days`.
 * **Swipe-to-Delete / Confirm**: Dialog to delete records with optimistic state update.
 
-### 4. ➕ Dedicated Income & Expense Tracking
+### 5. ➕ Dedicated Income & Expense Tracking
 * Modal and full-screen transaction entry forms.
 * **Presets & Categorization**:
   * Incomes: `Salary`, `Freelancing`, `Investments`, `Stocks`, `Bitcoin`, `Bank Transfer`, `YouTube`, `Other`.
   * Expenses: `Education`, `Groceries`, `Health`, `Subscriptions`, `Takeaways`, `Clothing`, `Travelling`, `Other`.
 * Dynamic date picker (ISO formatted), category selector chips, and notes.
 
-### 5. 🤖 AI Financial Advisor & Wealth Engine
+### 6. 🤖 AI Financial Advisor & Wealth Engine
 * Direct consumption of backend AI endpoint (`POST /api/v1/get-suggestions`).
 * Generates actionable financial advice based on current balance, total income, and total expenses.
 * **Save to Database**: Save AI advice to MongoDB (`POST /api/v1/saveSuggestions`).
 * **History Feed**: Inspect previously generated advisory plans (`GET /api/v1/get-saved-suggestions`).
 
-### 6. 🧮 6 Interactive Financial Calculators (with Growth Curves)
+### 7. 🧮 6 Interactive Financial Calculators (with Growth Curves)
 * **SIP Calculator**: Systematic Investment Plan monthly compound returns with visual projection chart.
 * **SWP Calculator**: Systematic Withdrawal Plan depletion, monthly payout, and residual balance.
 * **FD Calculator**: Fixed Deposit quarterly compounding and maturity amount.
@@ -50,7 +56,7 @@ The mobile application connects directly to the existing **Node.js / Express / M
 * **PPF Calculator**: Public Provident Fund 15–30 year tax-free compound growth.
 * **Gold Calculator**: Sovereign Gold Bonds & physical bullion long-term value estimation.
 
-### 7. 👤 Profile & App Settings
+### 8. 👤 Profile & App Settings
 * **Cloudinary Avatar Upload**: Choose photos from gallery via `expo-image-picker` (`PUT /api/users/update-profile-image`).
 * **Dynamic API Switcher**: Change backend endpoint without rebuilding (ideal for switching between Android emulator `10.0.2.2`, iOS simulator `localhost`, or LAN IP).
 * **Test Connection**: Real-time ping button to test server reachability.
@@ -147,9 +153,24 @@ Create a `.env` file inside `mobile/`:
 
 ```bash
 EXPO_PUBLIC_API_URL=http://localhost:5000/api
+
+# Google OAuth Client IDs (Google Cloud Console credentials)
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.apps.googleusercontent.com
 ```
 
 > **Tip**: You can also change the API endpoint at runtime inside the app without rebuilding! Go to **Profile Tab -> Backend Server Endpoint** to edit and test the server connection live.
+
+### EAS Over-The-Air (OTA) Updates
+
+Publish updates directly to devices on the production channel:
+
+```bash
+cd mobile
+npx eas-cli update --branch production --message "Release description"
+```
 
 ---
 
