@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { UpdatePromptModal } from './src/components/common/UpdatePromptModal';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
           <StatusBar style="dark" />
           <RootNavigator />
         </NavigationContainer>
+        <UpdatePromptModal />
       </AuthProvider>
     </SafeAreaProvider>
   );
