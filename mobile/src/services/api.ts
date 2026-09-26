@@ -55,16 +55,16 @@ export const getCustomApiUrl = async (): Promise<string | null> => {
 };
 
 // Initialize custom URL if previously saved
-(async () => {
-  try {
-    const savedUrl = await SecureStore.getItemAsync(CUSTOM_API_URL_KEY);
-    if (savedUrl) {
-      api.defaults.baseURL = savedUrl;
-    }
-  } catch {
-    // Ignore initialization read errors
-  }
-})();
+// (async () => {
+//   try {
+//     const savedUrl = await SecureStore.getItemAsync(CUSTOM_API_URL_KEY);
+//     if (savedUrl) {
+//       api.defaults.baseURL = savedUrl;
+//     }
+//   } catch {
+//     // Ignore initialization read errors
+//   }
+// })();
 
 // Request Interceptor: Attach JWT Token
 api.interceptors.request.use(

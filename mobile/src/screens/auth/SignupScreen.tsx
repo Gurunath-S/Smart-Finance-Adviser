@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
+import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { FormInput } from '../../components/common/FormInput';
@@ -25,6 +25,16 @@ import { isValidEmail, isValidPassword, isValidUsername } from '../../utils/vali
 import { Ionicons } from '@expo/vector-icons';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Configure Google Sign-In outside the component
+const googleWebClientId = 
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
+  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
+  '896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com';
+
+GoogleSignin.configure({
+  webClientId: googleWebClientId,
+});
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -46,31 +56,6 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   const { signup, loginWithGoogle, error: authError, clearError } = useAuth();
 
-  const googleClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-    '896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com';
-
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: googleClientId,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || googleClientId,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
-      '896635394546-nn6d85mv0rc39v6kjs1i8qkng62cijpa.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      if (id_token) {
-        handleGoogleToken(id_token);
-      }
-    } else if (response?.type === 'error') {
-      console.warn('Google Auth Error:', response.error);
-      Alert.alert('Google Sign-Up Error', response.error?.message || 'Authentication failed. Please check Google Cloud settings.');
-    }
-  }, [response]);
-
   const handleGoogleToken = async (idToken: string) => {
     setIsGoogleSubmitting(true);
     await loginWithGoogle(idToken);
@@ -79,20 +64,31 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   const handleGooglePress = async () => {
     clearError();
-    const clientId =
-      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-      process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
-      googleClientId;
-    if (!clientId) {
-      Alert.alert(
-        'Google Sign-Up',
-        'Google OAuth Client ID is not configured yet. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID in mobile/.env.'
-      );
+    if (Platform.OS === 'web') {
+      Alert.alert('Notice', 'Web login uses a different flow. Please test on mobile build.');
       return;
     }
-    if (request) {
-      promptAsync();
+    
+    try {
+      setIsGoogleSubmitting(true);
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      
+      if (isSuccessResponse(response)) {
+        const idToken = response.data.idToken;
+        if (idToken) {
+          await handleGoogleToken(idToken);
+        } else {
+          throw new Error('No ID token present in response!');
+        }
+      } else {
+        // Sign-in cancelled or other non-error response
+        setIsGoogleSubmitting(false);
+      }
+    } catch (error: any) {
+      console.warn('Google Auth Error:', error);
+      Alert.alert('Google Sign-In Error', error?.message || 'Authentication failed.');
+      setIsGoogleSubmitting(false);
     }
   };
 
