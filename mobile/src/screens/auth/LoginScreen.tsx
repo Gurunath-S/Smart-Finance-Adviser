@@ -45,6 +45,10 @@ const googleWebClientId =
   process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
   '896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com';
 
+const googleAndroidClientId = 
+  process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 
+  '896635394546-nn6d85mv0rc39v6kjs1i8qkng62cijpa.apps.googleusercontent.com';
+
 try {
   if (GoogleSignin && typeof GoogleSignin.configure === 'function') {
     GoogleSignin.configure({
@@ -73,6 +77,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   // Web and Expo Go compatible Google Auth hook
   const [_webRequest, webResponse, promptWebAsync] = Google.useIdTokenAuthRequest({
     clientId: googleWebClientId,
+    androidClientId: googleAndroidClientId,
   });
 
   const handleGoogleToken = async (idToken: string) => {
