@@ -14,12 +14,13 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
 
-// Allow local dev origins + custom CLIENT_URL
+// Allow local dev origins + Vercel origins + custom CLIENT_URL
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:19006',
   'http://localhost:8081',
+  'https://smart-finance-adviser.vercel.app',
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -30,7 +31,19 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. mobile apps, Postman, server-to-server)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    
+    let hostname = '';
+    try {
+      hostname = new URL(origin).hostname;
+    } catch (_e) {
+      hostname = '';
+    }
+
+    if (
+      allowedOrigins.includes(origin) ||
+      (hostname && hostname.endsWith('.vercel.app')) ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return callback(null, true);
     }
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
