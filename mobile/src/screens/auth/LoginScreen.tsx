@@ -14,6 +14,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { FormInput } from '../../components/common/FormInput';
@@ -74,10 +75,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const { login, loginWithGoogle, error: authError, clearError } = useAuth();
 
+  const redirectUri = makeRedirectUri({
+    scheme: 'smartfinanceadviser',
+  });
+
   // Web and Expo Go compatible Google Auth hook
   const [_webRequest, webResponse, promptWebAsync] = Google.useIdTokenAuthRequest({
     clientId: googleWebClientId,
     androidClientId: googleAndroidClientId,
+    scopes: ['profile', 'email'],
+    redirectUri,
   });
 
   const handleGoogleToken = async (idToken: string) => {
