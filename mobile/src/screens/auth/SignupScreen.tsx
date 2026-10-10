@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
-import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
 import * as Google from 'expo-auth-session/providers/google';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,6 +23,20 @@ import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 import { isValidEmail, isValidPassword, isValidUsername } from '../../utils/validation';
 import { Ionicons } from '@expo/vector-icons';
+
+// Dynamically load native GoogleSignin module if available in binary (prevents TurboModuleRegistry crash in Expo Go)
+let GoogleSignin: any = null;
+let isSuccessResponse: (response: any) => boolean = () => false;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const gModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gModule.GoogleSignin;
+  if (gModule.isSuccessResponse) {
+    isSuccessResponse = gModule.isSuccessResponse;
+  }
+} catch {
+  // Safe fallback in Expo Go
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
