@@ -4,6 +4,7 @@ const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { handleServerError } = require('../utils/errorHandler');
 const verifyToken = require('../middleware/verifyToken');
+const { authRateLimiter } = require('../middleware/rateLimiter');
 const router = express.Router();
 
 const googleClient = new OAuth2Client();
@@ -16,7 +17,7 @@ const COOKIE_OPTIONS = {
 };
 
 // Signup route
-router.post("/signup", async (req, res) => {
+router.post("/signup", authRateLimiter, async (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -57,7 +58,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // Login route
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -70,7 +71,7 @@ router.post('/login', async (req, res) => {
       $or: [{ username }, { email: username.toLowerCase() }] 
     }).select('username email userId password profileImage role authProvider');
     
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
     if (!user.password && user.authProvider === 'google') {
       return res.status(400).json({
@@ -79,7 +80,7 @@ router.post('/login', async (req, res) => {
     }
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
@@ -94,7 +95,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Google OAuth Login / Register route
-router.post('/google', async (req, res) => {
+router.post('/google', authRateLimiter, async (req, res) => {
   const idToken = req.body.credential || req.body.idToken || req.body.token;
 
   if (!idToken) {
