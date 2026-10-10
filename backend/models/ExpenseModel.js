@@ -33,8 +33,10 @@ const ExpenseSchema = new mongoose.Schema({
     userId: {
         type: String,
         required: true,
-        index: true  // Index for fast user-based queries
     }
 }, { timestamps: true });
+
+// Compound index for efficient user filtering & date-descending sorting
+ExpenseSchema.index({ userId: 1, date: -1 });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);
