@@ -35,6 +35,7 @@ const verifyAdmin = async (req, res, next) => {
     }
     next();
   } catch (error) {
+    console.error("verifyAdmin authorization error:", error.message);
     return res.status(500).json({ message: 'Authorization check failed' });
   }
 };

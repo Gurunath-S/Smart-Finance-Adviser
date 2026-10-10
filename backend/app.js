@@ -3,6 +3,8 @@ const cors = require('cors');
 const { db } = require('./db/db');
 const cookieParser = require('cookie-parser');
 const app = express();
+// Enable trust proxy for accurate client IP identification behind reverse proxies
+app.set('trust proxy', 1);
 const authRoutes = require('./routes/auth');
 const suggestionsRoute = require("./routes/suggestions");
 const emailRoutes = require("./routes/emailRoutes");
@@ -11,8 +13,6 @@ const userRoutes = require("./routes/userRoutes");
 require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
-
-const path = require('path');
 
 // Allow local dev origins + custom CLIENT_URL
 const allowedOrigins = [
@@ -46,7 +46,7 @@ app.use("/api", emailRoutes);
 app.use('/api/v1', transactionRoutes);
 
 // global error handler to catch multer/cloudinary crashes and return JSON
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
     console.error("Global Error Caught:", err.message);
     res.status(500).json({ message: err.message || "Internal Server Error" });
 });
