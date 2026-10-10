@@ -1,12 +1,13 @@
 const ExpenseSchema = require("../models/ExpenseModel");
+const { parseMonetaryAmount } = require("../utils/currency");
 
 exports.addExpense = async (req, res) => {
     const { title, amount, category, description, date } = req.body;
     const userId = req.userId;
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        return res.status(400).json({ message: 'Amount must be a positive number!' });
+    const { valid, amount: parsedAmount, error } = parseMonetaryAmount(amount);
+    if (!valid) {
+        return res.status(400).json({ message: error || 'Amount must be a positive number!' });
     }
     if (!title || !category || !description || !date) {
         return res.status(400).json({ message: 'All fields are required!' });
@@ -33,6 +34,7 @@ exports.getExpense = async (req, res) => {
             .lean();
         res.status(200).json(expense);
     } catch (error) {
+        console.error("Error fetching expenses:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 };

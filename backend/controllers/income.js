@@ -1,4 +1,5 @@
 const IncomeSchema = require("../models/IncomeModel");
+const { parseMonetaryAmount } = require("../utils/currency");
 
 exports.addIncome = async (req, res) => {
     const { title, amount, category, description, date } = req.body;
@@ -8,9 +9,9 @@ exports.addIncome = async (req, res) => {
         return res.status(400).json({ message: 'All fields are required!' });
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        return res.status(400).json({ message: 'Amount must be a positive number!' });
+    const { valid, amount: parsedAmount, error } = parseMonetaryAmount(amount);
+    if (!valid) {
+        return res.status(400).json({ message: error || 'Amount must be a positive number!' });
     }
 
     try {
@@ -34,6 +35,7 @@ exports.getIncomes = async (req, res) => {
             .lean();
         res.status(200).json(income);
     } catch (error) {
+        console.error("Error fetching incomes:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
