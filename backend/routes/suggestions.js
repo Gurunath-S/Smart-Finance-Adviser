@@ -1,53 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { CohereClientV2 } = require('cohere-ai');
 const Suggestion = require('../models/Suggestion');
 const verifyToken = require('../middleware/verifyToken');
+const { getFinancialAdvice } = require('../services/advisoryEngine');
 require('dotenv').config();
 
-// Create a Cohere client instance using the API key from environment variables
-const cohereClient = new CohereClientV2({
-  token: process.env.CO_API_KEY,
-});
-
-// Generate suggestions using Cohere API (protected)
+// Generate suggestions using Zero-Cost Advisory Engine (protected)
 router.post('/get-suggestions', verifyToken, async (req, res) => {
   try {
     const { balance = 0, income = 0, expenses = 0 } = req.body;
 
-    const parsedBalance = Number(balance) || 0;
-    const parsedIncome = Number(income) || 0;
-    const parsedExpenses = Number(expenses) || 0;
-
-    const prompt = `I have a balance of ${parsedBalance}, with a monthly income of ${parsedIncome} and monthly expenses of ${parsedExpenses}.
-Suggest a structured financial plan focusing only on the most suitable investment options from the following: SIP, SWP, Fixed Deposit, Mutual Funds, PPF, and Gold.
-Evaluate which of these options best fit my financial status and goals, considering savings, income, and expenses. Provide clear monthly allocation suggestions and a brief conclusion. With only 3 points and with a conclusion max 200 words.`;
-
-    const response = await cohereClient.chat({
-      model: 'command-a-03-2025',
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
-
-    const aiMessage = response?.message?.content?.[0]?.text;
-
-    if (!aiMessage) {
-      throw new Error("Failed to retrieve AI suggestions.");
-    }
-
-    const suggestionsArray = aiMessage.split("\n").map(item => item.trim()).filter(Boolean);
+    const advice = await getFinancialAdvice({ balance, income, expenses });
 
     res.status(200).json({
-      balance: parsedBalance,
-      suggestions: suggestionsArray,
+      balance: advice.balance,
+      suggestions: advice.suggestions,
+      provider: advice.provider || 'deterministic',
     });
   } catch (error) {
-    console.error("Error fetching suggestions:", error.message);
-    res.status(500).json({ message: "Failed to generate suggestions. Please ensure AI key is active." });
+    console.error("Error generating suggestions:", error.message);
+    res.status(500).json({ message: "Failed to generate suggestions." });
   }
 });
 
