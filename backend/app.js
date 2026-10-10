@@ -24,12 +24,9 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-//middlewares
-app.use(express.json({ limit: '50mb' }));
-app.use(cookieParser());
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. mobile apps, Postman, server-to-server)
+    // Allow non-browser requests (mobile apps, Postman, server-to-server)
     if (!origin) return callback(null, true);
     
     let hostname = '';
@@ -39,17 +36,25 @@ app.use(cors({
       hostname = '';
     }
 
-    if (
-      allowedOrigins.includes(origin) ||
-      (hostname && hostname.endsWith('.vercel.app')) ||
-      process.env.NODE_ENV !== 'production'
-    ) {
+    const isVercel = hostname.endsWith('.vercel.app') || hostname === 'vercel.app';
+    const isExplicitlyAllowed = allowedOrigins.includes(origin);
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    if (isExplicitlyAllowed || isVercel || isDev) {
       return callback(null, true);
     }
-    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    return callback(null, false);
   },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+};
+
+//middlewares
+app.use(express.json({ limit: '50mb' }));
+app.use(cookieParser());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 //routes
 app.use('/api/auth', authRoutes);
