@@ -2,9 +2,9 @@ const IncomeSchema = require("../models/IncomeModel");
 const ExpenseSchema = require("../models/ExpenseModel");
 
 exports.fetchTransactions = async (req, res) => {
-    const { userId } = req.params;
+    const targetUserId = (req.params.userId === 'me') ? req.userId : req.params.userId;
 
-    if (req.userId !== userId) {
+    if (req.userId !== targetUserId && req.userRole !== 'admin') {
         return res.status(403).json({ message: "Access denied: you can only view your own transactions." });
     }
 
@@ -12,8 +12,8 @@ exports.fetchTransactions = async (req, res) => {
         // Parallel fetch — both run at the same time instead of sequentially
         // .lean() returns plain objects which are much faster to serialize
         const [expenses, incomes] = await Promise.all([
-            ExpenseSchema.find({ userId }).sort({ date: -1 }).lean(),
-            IncomeSchema.find({ userId }).sort({ date: -1 }).lean()
+            ExpenseSchema.find({ userId: targetUserId }).sort({ date: -1 }).lean(),
+            IncomeSchema.find({ userId: targetUserId }).sort({ date: -1 }).lean()
         ]);
 
         return res.status(200).json({ expenses, incomes });
