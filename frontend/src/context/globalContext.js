@@ -32,7 +32,8 @@ export const GlobalProvider = ({ children }) => {
         localStorage.setItem("profileImage", response.data.user.profileImage || "");
         return response.data.user;
       }
-    } catch (err) {
+    } catch (_err) {
+      console.warn("Session check failed:", _err?.message || _err);
       setCurrentUser(null);
       setIsAuthenticated(false);
       setToken(null);
@@ -53,8 +54,8 @@ export const GlobalProvider = ({ children }) => {
   const logoutSession = async () => {
     try {
       await axios.post(`${API_BASE_URL}/auth/logout`);
-    } catch (e) {
-      // Ignore network errors on logout
+    } catch (_e) {
+      console.warn("Logout error ignored:", _e?.message || _e);
     }
     setCurrentUser(null);
     setIsAuthenticated(false);
@@ -228,7 +229,8 @@ export const GlobalProvider = ({ children }) => {
       setUsers((prev) => prev.filter((user) => user._id !== id));
       setError("");
       return true;
-    } catch (err) {
+    } catch (_err) {
+      console.error("Error deleting user:", _err);
       setError("Error deleting user");
       return false;
     }

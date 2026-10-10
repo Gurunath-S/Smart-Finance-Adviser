@@ -141,6 +141,7 @@ const AdminDashboard = () => {
       }
       downloadExcelReport(allTx, "All_Transactions", user.username);
     } catch (err) {
+      console.error("Error fetching user transactions for report:", err);
       alert("Error fetching user transactions for report");
     }
   };
