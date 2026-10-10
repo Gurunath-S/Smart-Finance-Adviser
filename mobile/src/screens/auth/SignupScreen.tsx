@@ -33,9 +33,15 @@ const googleWebClientId =
   process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
   '896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com';
 
-GoogleSignin.configure({
-  webClientId: googleWebClientId,
-});
+try {
+  if (GoogleSignin && typeof GoogleSignin.configure === 'function') {
+    GoogleSignin.configure({
+      webClientId: googleWebClientId,
+    });
+  }
+} catch {
+  // Expo Go safe fallback
+}
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -57,7 +63,7 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   const { signup, loginWithGoogle, error: authError, clearError } = useAuth();
 
-  // Web-compatible Google Auth hook for Expo Web (w command)
+  // Web and Expo Go compatible Google Auth hook
   const [_webRequest, webResponse, promptWebAsync] = Google.useIdTokenAuthRequest({
     clientId: googleWebClientId,
   });
@@ -83,12 +89,13 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   const handleGooglePress = async () => {
     clearError();
-    if (Platform.OS === 'web') {
+    // Use WebBrowser auth session in Expo Go or Web environment
+    if (Platform.OS === 'web' || !GoogleSignin || typeof GoogleSignin.hasPlayServices !== 'function') {
       setIsGoogleSubmitting(true);
       try {
         await promptWebAsync();
       } catch (err: any) {
-        Alert.alert('Google Sign-In Error', err?.message || 'Web Google Sign-In failed');
+        Alert.alert('Google Sign-In Error', err?.message || 'Google Sign-In failed');
         setIsGoogleSubmitting(false);
       }
       return;
