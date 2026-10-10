@@ -151,7 +151,7 @@ const Login = () => {
             onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
             shape="pill"
-            ux_mode="redirect"
+            ux_mode="popup"
           />
         </div>
       </form>
