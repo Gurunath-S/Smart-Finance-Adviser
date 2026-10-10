@@ -156,6 +156,7 @@ const Signup = ({ onSignupSuccess }) => {
             onError={handleGoogleError}
             shape="pill"
             text="signup_with"
+            ux_mode="redirect"
           />
         </div>
       </form>
