@@ -2,7 +2,6 @@ const express = require("express");
 const User = require("../models/User");
 const ExpenseSchema = require("../models/ExpenseModel");
 const IncomeSchema = require("../models/IncomeModel");
-const Transaction = require("../models/Transaction");
 const { verifyToken, verifyAdmin } = require("../middleware/verifyToken");
 const Suggestion = require("../models/Suggestion");
 const multer = require("multer");
@@ -25,7 +24,19 @@ const storage = new CloudinaryStorage({
     allowed_formats: ["jpg", "png", "jpeg"],
   },
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB maximum file size limit
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, JPG, and PNG images are allowed.'));
+    }
+  }
+});
 
 // PUT update profile image (User self-service)
 router.put('/update-profile-image', verifyToken, upload.single('image'), async (req, res) => {
