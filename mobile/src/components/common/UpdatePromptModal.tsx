@@ -17,7 +17,7 @@ import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 
 export const UpdatePromptModal: React.FC = () => {
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const [_isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const lastCheckTime = useRef<number>(0);

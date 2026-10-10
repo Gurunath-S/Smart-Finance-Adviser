@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList, Income } from '../../types';
+import { AppStackParamList } from '../../types';
 import { useTransactions } from '../../hooks/useTransactions';
 import { TransactionItem } from '../../components/transactions/TransactionItem';
 import { EmptyState } from '../../components/common/EmptyState';

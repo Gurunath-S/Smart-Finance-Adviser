@@ -14,6 +14,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
+import * as Google from 'expo-auth-session/providers/google';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { FormInput } from '../../components/common/FormInput';
@@ -56,16 +57,40 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   const { signup, loginWithGoogle, error: authError, clearError } = useAuth();
 
+  // Web-compatible Google Auth hook for Expo Web (w command)
+  const [_webRequest, webResponse, promptWebAsync] = Google.useIdTokenAuthRequest({
+    clientId: googleWebClientId,
+  });
+
   const handleGoogleToken = async (idToken: string) => {
     setIsGoogleSubmitting(true);
     await loginWithGoogle(idToken);
     setIsGoogleSubmitting(false);
   };
 
+  useEffect(() => {
+    if (webResponse?.type === 'success') {
+      const idToken = webResponse.params?.id_token;
+      if (idToken) {
+        handleGoogleToken(idToken);
+      } else {
+        setIsGoogleSubmitting(false);
+      }
+    } else if (webResponse?.type === 'dismiss' || webResponse?.type === 'error') {
+      setIsGoogleSubmitting(false);
+    }
+  }, [webResponse]);
+
   const handleGooglePress = async () => {
     clearError();
     if (Platform.OS === 'web') {
-      Alert.alert('Notice', 'Web login uses a different flow. Please test on mobile build.');
+      setIsGoogleSubmitting(true);
+      try {
+        await promptWebAsync();
+      } catch (err: any) {
+        Alert.alert('Google Sign-In Error', err?.message || 'Web Google Sign-In failed');
+        setIsGoogleSubmitting(false);
+      }
       return;
     }
     

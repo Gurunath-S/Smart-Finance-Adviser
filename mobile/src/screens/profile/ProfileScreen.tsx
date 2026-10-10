@@ -120,6 +120,7 @@ export const ProfileScreen: React.FC = () => {
         message: 'Backend server is reachable and responsive!',
       });
     } catch (e: any) {
+      console.warn("Connection test failed:", e?.message || e);
       setTestStatus({
         tested: true,
         success: false,

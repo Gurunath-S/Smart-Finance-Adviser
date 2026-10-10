@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
 import { radii, spacing } from '../../theme/spacing';
 
 interface SkeletonProps {

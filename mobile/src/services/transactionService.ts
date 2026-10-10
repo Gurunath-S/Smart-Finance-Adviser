@@ -25,27 +25,19 @@ export const transactionService = {
       expenseService.getExpenses(),
     ]);
 
-    const unifiedIncomes: UnifiedTransaction[] = incomes.map((i) => ({
-      _id: i._id,
-      title: i.title,
-      amount: i.amount,
-      type: 'income',
-      date: i.date,
-      category: i.category,
-      description: i.description,
-      userId: i.userId,
-    }));
+    const toUnified = (item: Income | Expense, type: 'income' | 'expense'): UnifiedTransaction => ({
+      _id: item._id,
+      title: item.title,
+      amount: item.amount,
+      type,
+      date: item.date,
+      category: item.category,
+      description: item.description,
+      userId: item.userId,
+    });
 
-    const unifiedExpenses: UnifiedTransaction[] = expenses.map((e) => ({
-      _id: e._id,
-      title: e.title,
-      amount: e.amount,
-      type: 'expense',
-      date: e.date,
-      category: e.category,
-      description: e.description,
-      userId: e.userId,
-    }));
+    const unifiedIncomes = incomes.map((i) => toUnified(i, 'income'));
+    const unifiedExpenses = expenses.map((e) => toUnified(e, 'expense'));
 
     const unifiedTransactions = [...unifiedIncomes, ...unifiedExpenses].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()

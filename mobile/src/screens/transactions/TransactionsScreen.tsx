@@ -20,7 +20,6 @@ import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 import { isCurrentMonth } from '../../utils/date';
 import { Ionicons } from '@expo/vector-icons';
-import { TransactionType, UnifiedTransaction } from '../../types';
 
 type TypeFilter = 'all' | 'income' | 'expense';
 type DateFilter = 'all' | 'month' | 'month-past';

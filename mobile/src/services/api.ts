@@ -18,7 +18,7 @@ export const getDefaultApiUrl = (): string => {
 
 export const api = axios.create({
   baseURL: getDefaultApiUrl(),
-  timeout: 15000,
+  timeout: 45000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -82,10 +82,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Auto-logout on 401
+// Response Interceptor: Auto-logout on 401 & Rate Limit formatting on 429
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
+  async (error: AxiosError<{ message?: string; retryAfterSeconds?: number }>) => {
     if (error.response?.status === 401) {
       try {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
@@ -95,6 +95,10 @@ api.interceptors.response.use(
       if (onUnauthorizedCallback) {
         onUnauthorizedCallback();
       }
+    } else if (error.response?.status === 429) {
+      const retrySec = error.response.data?.retryAfterSeconds || error.response.headers['retry-after'] || 60;
+      const customMsg = error.response.data?.message || `Too many requests. Please wait ${retrySec} seconds before retrying.`;
+      error.message = customMsg;
     }
     return Promise.reject(error);
   }
