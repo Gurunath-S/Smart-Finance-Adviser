@@ -7,13 +7,15 @@ const CUSTOM_API_URL_KEY = 'sfa_custom_api_url';
 
 // Resolves default API base URL based on platform
 export const getDefaultApiUrl = (): string => {
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+  let url = process.env.EXPO_PUBLIC_API_URL;
+  if (!url) {
+    url = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
   }
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5000/api';
+  let formatted = url.trim().replace(/\/+$/, '');
+  if (!formatted.endsWith('/api')) {
+    formatted = `${formatted}/api`;
   }
-  return 'http://localhost:5000/api';
+  return formatted;
 };
 
 export const api = axios.create({
