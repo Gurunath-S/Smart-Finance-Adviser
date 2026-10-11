@@ -253,7 +253,7 @@ const AdminDashboard = () => {
   {users.length === 0 ? (
     <p>No users found</p>
   ) : (
-    <div style={{ maxHeight: "400px", overflowY: "auto", border: "1px solid #ccc", borderRadius: "8px" }}>
+    <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #ccc", borderRadius: "8px", WebkitOverflowScrolling: "touch" }}>
       <table>
         <thead>
           <tr>

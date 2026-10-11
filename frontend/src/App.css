@@ -39,7 +39,7 @@ input {
   z-index: 5;
 }
 
-form {
+.forms-container form {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,14 +49,15 @@ form {
   overflow: hidden;
   grid-column: 1 / 2;
   grid-row: 1 / 2;
+  width: 100%;
 }
 
-form.sign-up-form {
+.forms-container form.sign-up-form {
   opacity: 0;
   z-index: 1;
 }
 
-form.sign-in-form {
+.forms-container form.sign-in-form {
   z-index: 2;
 }
 
@@ -317,8 +318,9 @@ a.social-text.forgot-password:hover {
 
 @media (max-width: 870px) {
   .container {
-    min-height: 800px;
-    height: 100vh;
+    min-height: 100vh;
+    height: auto;
+    overflow-y: auto;
   }
   .signin-signup {
     width: 100%;
@@ -419,18 +421,36 @@ a.social-text.forgot-password:hover {
 }
 
 @media (max-width: 570px) {
-  form {
-    padding: 0 1.5rem;
+  .forms-container form {
+    padding: 0 1rem;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.8rem;
+  }
+
+  .input-field {
+    max-width: 100%;
+    width: 100%;
+    height: 50px;
+    margin: 8px 0;
+  }
+
+  .input-field input {
+    font-size: 1rem;
   }
 
   .image {
     display: none;
   }
+
   .panel .content {
     padding: 0.5rem 1rem;
   }
+
   .container {
-    padding: 1.5rem;
+    padding: 1rem 0.5rem;
   }
 
   .container:before {
