@@ -4,6 +4,7 @@ import { useGlobalContext } from "../context/globalContext";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import Pagination from "../Components/Pagination/Pagination";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -17,6 +18,8 @@ const AdminDashboard = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [combinedView, setCombinedView] = useState(true);
+  const [userPage, setUserPage] = useState(1);
+  const userPageSize = 6;
   const [emailDetails, setEmailDetails] = useState({
     email: "",
     subject: "",
@@ -253,43 +256,51 @@ const AdminDashboard = () => {
   {users.length === 0 ? (
     <p>No users found</p>
   ) : (
-    <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #ccc", borderRadius: "8px", WebkitOverflowScrolling: "touch" }}>
-      <table>
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user._id}>
-              <td>{user.username}</td>
-              <td>{user.email}</td>
-              <td>
-                <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
-                <button onClick={() => handleShowTransactions(user._id)}>View Transactions</button>
-                <button
-                  onClick={() => {
-                    setEmailDetails({ ...emailDetails, email: user.email });
-                    const emailForm = document.querySelector(".admin-dashboard form");
-                    if (emailForm) {
-                      emailForm.scrollIntoView({ behavior: "smooth" });
-                    }
-                  }}
-                >
-                  Email User
-                </button>
-                <button onClick={() => handleDownloadUserReport(user)}>
-                  Download Report
-                </button>
-              </td>
+    <>
+      <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #ccc", borderRadius: "8px", WebkitOverflowScrolling: "touch" }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {users.slice((userPage - 1) * userPageSize, userPage * userPageSize).map((user) => (
+              <tr key={user._id}>
+                <td>{user.username}</td>
+                <td>{user.email}</td>
+                <td>
+                  <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
+                  <button onClick={() => handleShowTransactions(user._id)}>View Transactions</button>
+                  <button
+                    onClick={() => {
+                      setEmailDetails({ ...emailDetails, email: user.email });
+                      const emailForm = document.querySelector(".admin-dashboard form");
+                      if (emailForm) {
+                        emailForm.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Email User
+                  </button>
+                  <button onClick={() => handleDownloadUserReport(user)}>
+                    Download Report
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination
+        currentPage={userPage}
+        totalItems={users.length}
+        pageSize={userPageSize}
+        onPageChange={setUserPage}
+      />
+    </>
   )}
 </div>
 
@@ -300,7 +311,7 @@ const AdminDashboard = () => {
             <h3>Transactions for {selectedUser?.username}</h3>
             <button className="close-modal-btn" onClick={handleCloseTransactions}>Close</button>
 
-            <div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "1rem 0" }}>
               <button onClick={() => handleGenerateReport("weekly")}>Weekly</button>
               <button onClick={() => handleGenerateReport("monthly")}>Monthly</button>
               <button onClick={() => handleGenerateReport("yearly")}>Yearly</button>
@@ -330,34 +341,48 @@ const AdminDashboard = () => {
   );
 };
 
-const TransactionTable = ({ title, transactions }) => (
-  <div>
-    <h4>{title}</h4>
-    <div className="transaction-table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Date</th>
-            <th>Category</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((transaction) => (
-            <tr key={transaction._id}>
-              <td>{transaction.title}</td>
-              <td>{transaction.type}</td>
-              <td>${transaction.amount}</td>
-              <td>{new Date(transaction.date).toLocaleDateString()}</td>
-              <td>{transaction.category}</td>
+const TransactionTable = ({ title, transactions }) => {
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
+  const paginatedList = transactions.slice((page - 1) * pageSize, page * pageSize);
+
+  return (
+    <div style={{ marginBottom: "1.5rem" }}>
+      <h4>{title} ({transactions.length})</h4>
+      <div className="transaction-table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Category</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {paginatedList.map((transaction) => (
+              <tr key={transaction._id}>
+                <td>{transaction.title}</td>
+                <td>{transaction.type}</td>
+                <td>${transaction.amount}</td>
+                <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                <td>{transaction.category}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {transactions.length > pageSize && (
+        <Pagination
+          currentPage={page}
+          totalItems={transactions.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default AdminDashboard;
