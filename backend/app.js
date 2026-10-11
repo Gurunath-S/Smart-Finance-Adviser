@@ -56,6 +56,11 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
+// health checks for Render & browsers
+app.get(['/', '/api', '/api/health'], (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Smart Finance Adviser API is running smoothly', time: new Date().toISOString() });
+});
+
 //routes
 app.use('/api/auth', authRoutes);
 app.use("/api/users", userRoutes);
