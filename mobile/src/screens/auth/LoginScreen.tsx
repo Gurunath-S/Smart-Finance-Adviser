@@ -21,6 +21,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { api, updateApiBaseUrl, getDefaultApiUrl, getCustomApiUrl } from '../../services/api';
+import axios from 'axios';
 import { FormInput } from '../../components/common/FormInput';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { colors } from '../../theme/colors';
@@ -101,14 +102,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       let target = inputApiUrl.trim().replace(/\/+$/, '');
       if (!target.endsWith('/api')) target = `${target}/api`;
 
-      const testClient = api.create({
+      const testClient = axios.create({
         baseURL: target,
-        timeout: 6000,
+        timeout: 10000,
       });
 
-      await testClient.get('/auth/login').catch((err) => {
-        if (err.response) return true;
-        throw err;
+      await testClient.get('/health').catch(async (err) => {
+        if (err.response) return true; // Server replied with HTTP status
+        // Fallback test root endpoint
+        return await testClient.get('/');
       });
 
       setServerTestStatus({
@@ -116,9 +118,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         message: 'Backend server is reachable and responsive!',
       });
     } catch (e: any) {
+      const errMsg = e.response?.data?.message || e.message || 'Connection timed out';
       setServerTestStatus({
         success: false,
-        message: `Could not reach ${inputApiUrl}. Please verify your PC and phone are on the same Wi-Fi.`,
+        message: `Could not reach ${inputApiUrl}: ${errMsg}. If using Render free tier, please wait 30s for it to wake up.`,
       });
     } finally {
       setIsTestingServer(false);

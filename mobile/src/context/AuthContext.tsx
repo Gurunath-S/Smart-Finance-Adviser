@@ -137,7 +137,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       return true;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Login failed. Please verify your credentials.';
+      const msg =
+        err.response?.data?.message ||
+        (err.message?.includes('Network') || err.code === 'ECONNABORTED'
+          ? `Server connection error (${err.message || 'Timeout'}). Please check your internet or tap Server Settings.`
+          : 'Login failed. Please verify your credentials.');
       setError(msg);
       return false;
     }

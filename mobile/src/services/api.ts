@@ -7,10 +7,7 @@ const CUSTOM_API_URL_KEY = 'sfa_custom_api_url';
 
 // Resolves default API base URL based on platform
 export const getDefaultApiUrl = (): string => {
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (!url) {
-    url = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
-  }
+  let url = process.env.EXPO_PUBLIC_API_URL || 'https://sfa-backend-1.onrender.com/api';
   let formatted = url.trim().replace(/\/+$/, '');
   if (!formatted.endsWith('/api')) {
     formatted = `${formatted}/api`;

@@ -12,11 +12,23 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://sfa-backend-1.onrender.com/api",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "896635394546-nn6d85mv0rc39v6kjs1i8qkng62cijpa.apps.googleusercontent.com"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://sfa-backend-1.onrender.com/api",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "896635394546-rjbo3k9a7fl1ugqbjr4orbuk9gphidk0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "896635394546-nn6d85mv0rc39v6kjs1i8qkng62cijpa.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {
