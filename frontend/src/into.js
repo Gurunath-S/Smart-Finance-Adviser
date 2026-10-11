@@ -9,6 +9,8 @@ import Income from './Components/Income/Income'
 import Expenses from './Components/Expenses/Expenses';
 import AllHistory from './Components/ViewTransactions/ViewTransactions'
 import FinancialSuggestion from './Components/FinancialSuggestion/FinancialSuggestion'
+import Profile from './Components/Profile/Profile';
+import Settings from './Components/Settings/Settings';
 
 function SideNav() {
   const [active, setActive] = useState(1)
@@ -25,15 +27,20 @@ function SideNav() {
         return <AllHistory/>
       case 5:
         return <FinancialSuggestion />
+      case 6:
+        return <Profile setActive={setActive} />
+      case 7:
+        return <Settings />
       default:
         return <Dashboard />
         
     }
   }
 
+  const orbEnabled = localStorage.getItem("app_orb_enabled") !== "false";
   const orbMemo = useMemo(() => {
-    return <Orb />
-  },[])
+    return orbEnabled ? <Orb /> : null;
+  },[orbEnabled])
 
   return (
     <AppStyled bg={bg} className="App">

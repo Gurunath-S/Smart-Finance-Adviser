@@ -37,4 +37,16 @@ export const menuItems = [
         icon: <img src={counseller} alt="Financial Suggestions Icon" style={iconStyle} />,
         link: "/dashboard",
     },
+    {
+        id: 6,
+        title: "Profile",
+        icon: <i className="fa-solid fa-user-circle" style={{ fontSize: '24px', width: '32px', textAlign: 'center', color: '#10b981' }}></i>,
+        link: "/dashboard",
+    },
+    {
+        id: 7,
+        title: "Settings",
+        icon: <i className="fa-solid fa-gear" style={{ fontSize: '24px', width: '32px', textAlign: 'center', color: '#6366f1' }}></i>,
+        link: "/dashboard",
+    },
 ];

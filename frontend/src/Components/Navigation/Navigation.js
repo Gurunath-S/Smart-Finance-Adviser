@@ -16,7 +16,7 @@ function Navigation({ active, setActive }) {
     const [errorMsg, setErrorMsg] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const fileInputRef = useRef(null);
-    const { totalIncome, logoutSession } = useGlobalContext();
+    const { totalIncome, logoutSession, currencySymbol = "$" } = useGlobalContext();
 
     useEffect(() => {
         const savedUsername = localStorage.getItem("username");
@@ -92,7 +92,7 @@ function Navigation({ active, setActive }) {
                 <div className="mobile-brand">
                     <h2>{currentActiveItem ? currentActiveItem.title : "Finance Advisor"}</h2>
                 </div>
-                <div className="mobile-user" onClick={() => setIsOpen(true)}>
+                <div className="mobile-user" onClick={() => handleMenuItemClick(6)} title="View Profile">
                     <img src={avatarUrl} alt="Profile" />
                 </div>
             </MobileHeaderStyled>
@@ -142,9 +142,9 @@ function Navigation({ active, setActive }) {
                             onChange={handleFileChange} 
                         />
                     </div>
-                    <div className="text">
+                    <div className="text" onClick={() => handleMenuItemClick(6)} style={{ cursor: "pointer" }} title="View Profile">
                         <h2>{username}</h2>
-                        <p>$ {totalIncome()}</p>
+                        <p>{currencySymbol} {totalIncome().toLocaleString()}</p>
                     </div>
                 </motion.div>
                 <motion.ul
