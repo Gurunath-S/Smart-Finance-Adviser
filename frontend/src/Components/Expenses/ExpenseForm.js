@@ -125,44 +125,67 @@ function ExpenseForm() {
 const ExpenseFormStyled = styled.form`
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    input, textarea, select{
+    gap: 1.5rem;
+    width: 100%;
+
+    @media (max-width: 576px) {
+        gap: 1rem;
+    }
+
+    input, textarea, select {
         font-family: inherit;
         font-size: inherit;
         outline: none;
         border: none;
-        padding: .5rem 1rem;
-        border-radius: 5px;
+        padding: .6rem 1rem;
+        border-radius: 8px;
         border: 2px solid #fff;
         background: transparent;
         resize: none;
         box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
         color: rgba(34, 34, 96, 0.9);
-        &::placeholder{
+        width: 100%;
+        box-sizing: border-box;
+
+        &::placeholder {
             color: rgba(34, 34, 96, 0.4);
         }
     }
-    .input-control{
-        input{
+
+    .input-control {
+        width: 100%;
+
+        input, textarea {
             width: 100%;
         }
     }
 
-    .selects{
+    .react-datepicker-wrapper,
+    .react-datepicker__input-container {
+        width: 100%;
+    }
+
+    .selects {
         display: flex;
-        justify-content: flex-end;
-        select{
-            color: rgba(34, 34, 96, 0.4);
-            &:focus, &:active{
+        width: 100%;
+
+        select {
+            width: 100%;
+            color: rgba(34, 34, 96, 0.6);
+            &:focus, &:active {
                 color: rgba(34, 34, 96, 1);
             }
         }
     }
 
-    .submit-btn{
-        button{
+    .submit-btn {
+        width: 100%;
+
+        button {
             box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
-            &:hover{
+            width: 100%;
+            justify-content: center;
+            &:hover {
                 background: var(--color-green) !important;
             }
         }

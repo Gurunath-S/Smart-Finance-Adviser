@@ -108,6 +108,13 @@ const IncomeItemStyled = styled.div`
     gap: 1rem;
     width: 100%;
     color: #222260;
+
+    @media (max-width: 576px) {
+        padding: 0.75rem;
+        border-radius: 16px;
+        gap: 0.75rem;
+    }
+
     .icon{
         width: 80px;
         height: 80px;
@@ -117,8 +124,20 @@ const IncomeItemStyled = styled.div`
         align-items: center;
         justify-content: center;
         border: 2px solid #FFFFFF;
+        flex-shrink: 0;
+
         i{
             font-size: 2.6rem;
+        }
+
+        @media (max-width: 576px) {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+
+            i {
+                font-size: 1.6rem;
+            }
         }
     }
 
@@ -126,11 +145,15 @@ const IncomeItemStyled = styled.div`
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: .2rem;
+        gap: .3rem;
+        min-width: 0;
+
         h5{
-            font-size: 1.3rem;
-            padding-left: 2rem;
+            font-size: clamp(1rem, 2.2vw, 1.3rem);
+            padding-left: 1.8rem;
             position: relative;
+            word-break: break-word;
+
             &::before{
                 content: '';
                 position: absolute;
@@ -148,16 +171,38 @@ const IncomeItemStyled = styled.div`
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 0.5rem;
+
+            @media (max-width: 640px) {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+
             .text{
                 display: flex;
                 align-items: center;
                 gap: 1.5rem;
+                flex-wrap: wrap;
+
+                @media (max-width: 640px) {
+                    gap: 0.8rem;
+                }
+
                 p{
                     display: flex;
                     align-items: center;
-                    gap: 0.5rem;
+                    gap: 0.4rem;
                     color: var(--primary-color);
-                    opacity: 0.8;
+                    opacity: 0.85;
+                    font-size: clamp(0.85rem, 1.8vw, 1rem);
+                    word-break: break-word;
+                }
+            }
+
+            .btn-con {
+                @media (max-width: 640px) {
+                    align-self: flex-end;
                 }
             }
         }
