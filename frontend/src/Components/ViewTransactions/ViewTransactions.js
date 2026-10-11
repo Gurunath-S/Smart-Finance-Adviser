@@ -232,37 +232,63 @@ function AllHistory() {
             )}
         </AllHistoryStyled>
     );
-}
-
-const AllHistoryStyled = styled.div`
+}const AllHistoryStyled = styled.div`
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     align-items: center;
     padding: 2rem;
+    width: 100%;
+
+    @media (max-width: 768px) {
+        padding: 0.5rem 0.2rem;
+        gap: 1rem;
+    }
+
+    h2 {
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        text-align: center;
+    }
 
     .date-filter {
         display: flex;
         justify-content: center;
         margin-bottom: 1rem;
+        width: 100%;
 
         .date-input-container {
             display: flex;
             align-items: center;
             gap: 1rem;
             position: relative;
+            flex-wrap: wrap;
+            justify-content: center;
+
+            @media (max-width: 576px) {
+                gap: 0.6rem;
+                width: 100%;
+            }
         }
 
         label {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+
+            @media (max-width: 576px) {
+                flex: 1 1 130px;
+            }
         }
 
         input {
             padding: 0.5rem;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .clear-date-btn {
@@ -270,16 +296,13 @@ const AllHistoryStyled = styled.div`
             color: white;
             border: none;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            position: absolute;
-            right: -40px;
-            top: 50%;
-            transform: translateY(-50%);
+            margin-top: 1rem;
             transition: background-color 0.3s ease;
 
             &:hover {
@@ -294,19 +317,27 @@ const AllHistoryStyled = styled.div`
 
     .download-buttons {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        gap: 0.8rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
     }
 
     .download-btn {
-        padding: 0.8rem 1.5rem;
-        font-size: 1.1rem;
+        padding: 0.75rem 1.25rem;
+        font-size: clamp(0.9rem, 1.8vw, 1.05rem);
         cursor: pointer;
         background-color: rgb(243, 220, 242);
         color: var(--color-primary);
         border: none;
         border-radius: 12px;
         transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+
+        @media (max-width: 768px) {
+            flex: 1 1 100%;
+            padding: 0.7rem 1rem;
+        }
 
         &:hover {
             background-color: pink;
@@ -329,15 +360,19 @@ const AllHistoryStyled = styled.div`
     }
 
     .toggle-btn {
-        padding: 0.8rem 1.5rem;
-        font-size: 1.1rem;
+        padding: 0.75rem 1.4rem;
+        font-size: clamp(0.9rem, 1.8vw, 1.05rem);
         cursor: pointer;
         background-color: rgb(243, 220, 242);
         color: var(--color-primary);
         border: none;
         border-radius: 12px;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+
+        @media (max-width: 768px) {
+            width: 100%;
+        }
 
         &:hover {
             background-color: pink;
@@ -352,44 +387,50 @@ const AllHistoryStyled = styled.div`
 
     .history-container {
         display: flex;
-        gap: 2rem;
+        gap: 1.5rem;
         width: 100%;
         justify-content: space-between;
 
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             flex-direction: column;
         }
     }
 
     .history-section {
         flex: 1;
+        width: 100%;
         border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1);
+        padding: 1.2rem;
+        box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.08);
         transition: transform 0.3s ease;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
 
-        &:hover {
-            transform: translateY(-5px);
+        @media (max-width: 576px) {
+            padding: 0.6rem;
+            border-radius: 12px;
         }
 
         h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
             text-align: center;
         }
     }
 
     table {
         width: 100%;
+        min-width: 540px;
         border-collapse: collapse;
         background: rgb(243, 220, 242);
         border-radius: 12px;
         overflow: hidden;
 
         th, td {
-            padding: 0.8rem;
+            padding: 0.75rem 0.6rem;
             text-align: left;
             border-bottom: 1px solid rgb(15, 122, 230);
+            font-size: clamp(0.8rem, 1.5vw, 0.95rem);
         }
 
         th {
@@ -398,7 +439,6 @@ const AllHistoryStyled = styled.div`
         }
 
         td {
-            font-size: 0.95rem;
             color: #444;
             word-break: break-word;
         }
@@ -423,14 +463,13 @@ const AllHistoryStyled = styled.div`
     td[style*="color: var(--color-green)"] {
         color: #5cb85c !important;
     }
-    .no-transaction-message {
-    text-align: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: gray;
-    margin-top: 1rem;
-}
 
+    .no-transaction-message {
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: gray;
+    }
 `;
 
 export default AllHistory;

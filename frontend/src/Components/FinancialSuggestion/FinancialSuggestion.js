@@ -233,13 +233,14 @@ const FinancialSuggestion = () => {
               <motion.div
                 key="calculator"
                 className="calculator-wrapper"
-                initial={{ x: chartData ? "-50%" : 0 }}
+                initial={{ opacity: 0 }}
                 animate={{ 
-                  x: chartData ? 0 : "0%",
-                  width: chartData ? "45%" : "100%"
+                  opacity: 1,
+                  x: 0,
+                  width: (chartData && typeof window !== 'undefined' && window.innerWidth > 992) ? "45%" : "100%"
                 }}
-                exit={{ x: "-100%" }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
               >
                 <div className="calculator">
                   <h3>{selectedCalculator} Calculator</h3>
@@ -283,10 +284,10 @@ const FinancialSuggestion = () => {
               <motion.div
                 key="charts"
                 className="charts-wrapper"
-                initial={{ opacity: 0, x: "100%" }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: "100%" }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
                 <div className="charts">
                   <h4>Growth Over Time</h4>
@@ -320,32 +321,22 @@ const FinancialSuggestion = () => {
 export default FinancialSuggestion;
 
 const FinancialSuggestionStyled = styled.div`
+  width: 100%;
+
   .card {
-    
-    background: rgba(250, 229, 250,0.1); /* Semi-transparent background */
-    ${'' /* backdrop-filter: blur(3px); */}
+    background: rgba(250, 229, 250,0.1);
     padding: 20px;
     border-radius: 12px;
-    ${'' /* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */}
     margin-bottom: 20px;
     position: relative;
     z-index: 1;
-    
-    /* Add a subtle gradient overlay */
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      ${'' /* background: linear-gradient(135deg, rgba(195, 207, 226, 0.3), rgba(173, 216, 230, 0.2)); */}
-      border-radius: 12px;
-      z-index: -1;
+
+    @media (max-width: 576px) {
+      padding: 12px;
     }
 
     h2 {
-      font-size: 1.8rem;
+      font-size: clamp(1.4rem, 2.8vw, 1.8rem);
       color: #333;
       margin-bottom: 15px;
     }
@@ -357,11 +348,16 @@ const FinancialSuggestionStyled = styled.div`
     gap: 15px;
     margin-bottom: 20px;
 
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 10px;
+    }
+
     .stat {
-      background: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+      background: rgba(255, 255, 255, 0.85);
       padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       text-align: center;
       flex: 1;
       backdrop-filter: blur(3px);
@@ -372,13 +368,13 @@ const FinancialSuggestionStyled = styled.div`
       }
 
       h3 {
-        font-size: 1.6rem;
+        font-size: clamp(1.2rem, 2.5vw, 1.6rem);
         margin-top: 5px;
       }
 
       .icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
+        font-size: 1.8rem;
+        margin-bottom: 8px;
       }
 
       .income {
@@ -405,6 +401,10 @@ const FinancialSuggestionStyled = styled.div`
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    @media (max-width: 576px) {
+      width: 100%;
+    }
   }
 
   button:hover {
@@ -419,38 +419,38 @@ const FinancialSuggestionStyled = styled.div`
 
   .suggestions {
     margin-top: 20px;
-    padding: 20px;
-    background: rgba(250, 229, 250,0.1);
+    padding: 16px;
+    background: rgba(250, 229, 250, 0.2);
     border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
     backdrop-filter: blur(3px);
-  }
 
-  .suggestions h3 {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-    color: #007bff;
-  }
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: #007bff;
+    }
 
-  .suggestions ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 15px;
-    list-style: none;
-    padding: 0;
-  }
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      list-style: none;
+      padding: 0;
 
-  .suggestions li {
-    background: rgba(255, 255, 255, 0.8);
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
+      @media (max-width: 576px) {
+        grid-template-columns: 1fr;
+      }
+    }
 
-  .suggestions li:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    li {
+      background: rgba(255, 255, 255, 0.85);
+      padding: 12px 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
   }
 
   .calculator-selection {
@@ -459,59 +459,75 @@ const FinancialSuggestionStyled = styled.div`
     p {
       font-size: 1rem;
       margin-bottom: 10px;
+      font-weight: 600;
     }
 
     .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
 
       button {
-        background: rgba(248, 249, 250, 0.7);
-        border: 1px solid rgba(221, 221, 221, 0.7);
-        border-radius: 6px;
-        padding: 10px 15px;
-        font-size: 0.9rem;
+        background: rgba(248, 249, 250, 0.85);
+        border: 1px solid rgba(221, 221, 221, 0.8);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.88rem;
         color: #333;
         cursor: pointer;
-        transition: all 0.3s ease;
+        width: 100%;
+        text-align: center;
+        transition: all 0.2s ease;
 
         &:hover {
-          background: rgba(0, 123, 255, 0.8);
+          background: rgba(0, 123, 255, 0.85);
           color: white;
-          border-color: rgba(0, 123, 255, 0.8);
+          border-color: rgba(0, 123, 255, 0.85);
         }
       }
     }
   }
 
   .calculators-container {
-    
     position: relative;
-    min-height: 400px;
+    min-height: auto;
     display: flex;
-    margin-top: 30px;
+    gap: 1.5rem;
+    margin-top: 25px;
     overflow: hidden;
+
+    @media (max-width: 992px) {
+      flex-direction: column;
+    }
   }
 
   .calculator-wrapper {
     display: flex;
     justify-content: center;
-    margin: 0 auto;
+    width: 100%;
+
+    @media (max-width: 992px) {
+      width: 100% !important;
+    }
   }
 
   .calculator {
-    background: rgba(250, 229, 250,0.1);
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: rgba(250, 229, 250, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     width: 100%;
     max-width: 450px;
     backdrop-filter: blur(5px);
+    box-sizing: border-box;
+
+    @media (max-width: 992px) {
+      max-width: 100%;
+    }
 
     h3 {
-      font-size: 1.4rem;
-      margin-bottom: 20px;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
       color: #333;
       text-align: center;
     }
@@ -519,12 +535,13 @@ const FinancialSuggestionStyled = styled.div`
     input {
       border: 1px solid rgba(221, 221, 221, 0.8);
       border-radius: 8px;
-      padding: 12px;
-      font-size: 1rem;
+      padding: 10px 12px;
+      font-size: 0.95rem;
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       transition: border-color 0.3s ease;
       background: rgba(255, 255, 255, 0.9);
+      box-sizing: border-box;
 
       &:focus {
         border-color: rgba(0, 123, 255, 0.8);
@@ -535,37 +552,43 @@ const FinancialSuggestionStyled = styled.div`
 
     .calculate-btn {
       width: 100%;
-      margin-top: 10px;
+      margin-top: 8px;
       padding: 12px;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .result {
-      margin-top: 20px;
+      margin-top: 16px;
       padding: 10px;
-      background: rgba(248, 249, 250, 0.7);
-      border-radius: 6px;
+      background: rgba(248, 249, 250, 0.8);
+      border-radius: 8px;
       font-weight: bold;
       text-align: center;
       color: #28a745;
+      font-size: 1.05rem;
     }
   }
 
   .charts-wrapper {
     flex: 1;
+    width: 100%;
+
+    @media (max-width: 992px) {
+      width: 100% !important;
+    }
   }
 
   .charts {
-    background: rgba(250, 229, 250,0.1);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: rgba(250, 229, 250, 0.2);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     height: 100%;
     backdrop-filter: blur(5px);
 
     h4 {
-      font-size: 1.2rem;
-      margin-bottom: 15px;
+      font-size: 1.1rem;
+      margin-bottom: 12px;
       color: #333;
       text-align: center;
     }
@@ -577,19 +600,6 @@ const FinancialSuggestionStyled = styled.div`
 
     .pie-chart {
       height: 200px;
-    }
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .calculators-container {
-      flex-direction: column;
-      min-height: 700px;
-    }
-
-    .calculator-wrapper, .charts-wrapper {
-      width: 100% !important;
-      margin-bottom: 20px;
     }
   }
 `;
