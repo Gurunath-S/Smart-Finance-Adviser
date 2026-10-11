@@ -18,6 +18,12 @@ export const GlobalProvider = ({ children }) => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [currencySymbol, setCurrencySymbol] = useState(localStorage.getItem("app_currency") || "$");
+
+  const updateCurrency = (symbol) => {
+    setCurrencySymbol(symbol);
+    localStorage.setItem("app_currency", symbol);
+  };
 
   // Validate session on app launch via /api/auth/me (HTTP-only Cookie or Bearer Token)
   const checkAuthSession = useCallback(async () => {
@@ -325,6 +331,9 @@ export const GlobalProvider = ({ children }) => {
         transactions,
         fetchSuggestions,
         saveSuggestions,
+        setCurrentUser,
+        currencySymbol,
+        updateCurrency,
       }}
     >
       {children}

@@ -3,11 +3,10 @@ import styled from 'styled-components'
 import { useGlobalContext } from '../../context/globalContext';
 import History from '../../History/History';
 import { InnerLayout } from '../../styles/Layouts';
-import { dollar } from '../../utils/Icons';
 import Chart from '../Chart/Chart';
 
 function Dashboard() {
-    const { totalExpenses, incomes, expenses, totalIncome, totalBalance, getIncomes, getExpenses } = useGlobalContext()
+    const { totalExpenses, incomes, expenses, totalIncome, totalBalance, getIncomes, getExpenses, currencySymbol = "$" } = useGlobalContext()
 
     useEffect(() => {
         getIncomes()
@@ -37,7 +36,7 @@ function Dashboard() {
                                     <span className="card-icon inc"><i className="fa-solid fa-arrow-trend-up"></i></span>
                                 </div>
                                 <p className="amount-val">
-                                    {dollar} {totalIncome()}
+                                    {currencySymbol} {totalIncome().toLocaleString()}
                                 </p>
                             </div>
                             <div className="stat-card expense">
@@ -46,7 +45,7 @@ function Dashboard() {
                                     <span className="card-icon exp"><i className="fa-solid fa-arrow-trend-down"></i></span>
                                 </div>
                                 <p className="amount-val">
-                                   {dollar} {totalExpenses()}
+                                   {currencySymbol} {totalExpenses().toLocaleString()}
                                 </p>
                             </div>
                             <div className="stat-card balance">
@@ -55,7 +54,7 @@ function Dashboard() {
                                     <span className="card-icon bal"><i className="fa-solid fa-wallet"></i></span>
                                 </div>
                                 <p className="amount-val bal-val">
-                                    {dollar} {totalBalance()}
+                                    {currencySymbol} {totalBalance().toLocaleString()}
                                 </p>
                             </div>
                         </div>
@@ -65,13 +64,13 @@ function Dashboard() {
                         <div className="min-max-box">
                             <h2 className="salary-title">Min <span>Income</span>Max</h2>
                             <div className="salary-item">
-                                <p>${minIncome}</p>
-                                <p>${maxIncome}</p>
+                                <p>{currencySymbol}{minIncome.toLocaleString()}</p>
+                                <p>{currencySymbol}{maxIncome.toLocaleString()}</p>
                             </div>
                             <h2 className="salary-title">Min <span>Expense</span>Max</h2>
                             <div className="salary-item">
-                                <p>${minExpense}</p>
-                                <p>${maxExpense}</p>
+                                <p>{currencySymbol}{minExpense.toLocaleString()}</p>
+                                <p>{currencySymbol}{maxExpense.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
