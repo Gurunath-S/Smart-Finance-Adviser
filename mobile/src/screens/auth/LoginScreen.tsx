@@ -7,12 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -286,9 +287,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         >
           {/* Brand Header */}
           <View style={styles.header}>
-            <View style={styles.logoBadge}>
-              <Ionicons name="wallet" size={36} color={colors.textInverse} />
-            </View>
+            <Image
+              source={require('../../../assets/icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.brandTitle}>Smart Finance</Text>
             <Text style={styles.brandSubtitle}>Personal Finance & AI Wealth Adviser</Text>
           </View>
@@ -298,15 +301,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <Text style={styles.cardTitle}>Welcome Back</Text>
             <Text style={styles.cardSubtitle}>Sign in to track your wealth and advisory</Text>
 
-            {authError && (
+            {Boolean(authError) ? (
               <View style={styles.errorBanner}>
                 <Ionicons name="alert-circle" size={18} color={colors.expense} />
                 <Text style={styles.errorBannerText}>{authError}</Text>
               </View>
-            )}
+            ) : null}
 
             {/* Quick Biometric Unlock Card */}
-            {isBiometricsAvailable && (savedBiometricUser || isBiometricsEnabled) && (
+            {Boolean(isBiometricsAvailable && (savedBiometricUser || isBiometricsEnabled)) ? (
               <TouchableOpacity
                 style={styles.biometricBtn}
                 onPress={handleBiometricLogin}
@@ -336,7 +339,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   </>
                 )}
               </TouchableOpacity>
-            )}
+            ) : null}
 
             <FormInput
               label="Username or Email"
@@ -447,28 +450,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               autoCorrect={false}
             />
 
-            {serverTestStatus && (
+            {Boolean(serverTestStatus) ? (
               <View
                 style={[
                   styles.statusBox,
-                  serverTestStatus.success ? styles.statusSuccess : styles.statusError,
+                  serverTestStatus?.success ? styles.statusSuccess : styles.statusError,
                 ]}
               >
                 <Ionicons
-                  name={serverTestStatus.success ? 'checkmark-circle' : 'alert-circle'}
+                  name={serverTestStatus?.success ? 'checkmark-circle' : 'alert-circle'}
                   size={18}
-                  color={serverTestStatus.success ? colors.income : colors.expense}
+                  color={serverTestStatus?.success ? colors.income : colors.expense}
                 />
                 <Text
                   style={[
                     styles.statusText,
-                    serverTestStatus.success ? styles.statusTextSuccess : styles.statusTextError,
+                    serverTestStatus?.success ? styles.statusTextSuccess : styles.statusTextError,
                   ]}
                 >
-                  {serverTestStatus.message}
+                  {serverTestStatus?.message}
                 </Text>
               </View>
-            )}
+            ) : null}
 
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -517,6 +520,17 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
+  },
+  logoImage: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.xl,
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   logoBadge: {
     width: 68,
