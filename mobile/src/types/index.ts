@@ -38,6 +38,30 @@ export type ExpenseCategory =
   | 'travelling'
   | 'other';
 
+export type PaymentMode = 'cash' | 'online';
+
+export interface CashDenominationNotes {
+  n500: number;
+  n200: number;
+  n100: number;
+  n50: number;
+  n20: number;
+  n10: number;
+}
+
+export interface CashDenominationCoins {
+  c20: number;
+  c10: number;
+  c5: number;
+  c2: number;
+  c1: number;
+}
+
+export interface CashDenominations {
+  notes: CashDenominationNotes;
+  coins: CashDenominationCoins;
+}
+
 export interface Income {
   _id: string;
   title: string;
@@ -47,6 +71,7 @@ export interface Income {
   category: IncomeCategory | string;
   description: string;
   userId: string;
+  paymentMode?: PaymentMode;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -60,6 +85,7 @@ export interface Expense {
   category: ExpenseCategory | string;
   description: string;
   userId: string;
+  paymentMode?: PaymentMode;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -73,6 +99,7 @@ export interface UnifiedTransaction {
   category: string;
   description: string;
   userId: string;
+  paymentMode?: PaymentMode;
 }
 
 export interface SuggestionHistoryItem {

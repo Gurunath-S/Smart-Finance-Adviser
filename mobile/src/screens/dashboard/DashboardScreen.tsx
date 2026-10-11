@@ -21,6 +21,7 @@ import { SectionHeader } from '../../components/common/SectionHeader';
 import { DashboardSkeleton } from '../../components/common/LoadingSkeleton';
 import { FloatingActionButton } from '../../components/common/FloatingActionButton';
 import { QuickTransactionModal } from '../../components/forms/QuickTransactionModal';
+import { CashDenominationModal } from '../../components/cash/CashDenominationModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -42,6 +43,7 @@ export const DashboardScreen: React.FC = () => {
 
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [modalVisible, setModalVisible] = useState(false);
+  const [isCashModalVisible, setIsCashModalVisible] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -110,10 +112,13 @@ export const DashboardScreen: React.FC = () => {
         {/* Hero Balance Card */}
         <BalanceCard
           balance={summary.currentBalance}
+          inAccountBalance={summary.inAccountBalance}
+          inHandBalance={summary.inHandBalance}
           income={summary.totalIncome}
           expenses={summary.totalExpenses}
           onAddIncome={() => setModalVisible(true)}
           onAddExpense={() => setModalVisible(true)}
+          onOpenCashManager={() => setIsCashModalVisible(true)}
         />
 
         {/* Financial Health Metrics */}
@@ -161,6 +166,13 @@ export const DashboardScreen: React.FC = () => {
         onClose={() => setModalVisible(false)}
         onAddIncome={addIncome}
         onAddExpense={addExpense}
+      />
+
+      {/* Cash In-Hand Notes & Coins Denomination Modal */}
+      <CashDenominationModal
+        visible={isCashModalVisible}
+        onClose={() => setIsCashModalVisible(false)}
+        onSaved={() => refresh()}
       />
     </SafeAreaView>
   );

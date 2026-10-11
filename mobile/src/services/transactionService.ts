@@ -11,6 +11,12 @@ export interface FinancialSummary {
   expenseRatio: number; // percentage
   thisMonthIncome: number;
   thisMonthExpense: number;
+  inHandBalance: number;
+  inAccountBalance: number;
+  inHandIncome: number;
+  inHandExpense: number;
+  inAccountIncome: number;
+  inAccountExpense: number;
 }
 
 export const transactionService = {
@@ -34,6 +40,7 @@ export const transactionService = {
       category: item.category,
       description: item.description,
       userId: item.userId,
+      paymentMode: item.paymentMode === 'cash' ? 'cash' : 'online',
     });
 
     const unifiedIncomes = incomes.map((i) => toUnified(i, 'income'));
@@ -46,6 +53,22 @@ export const transactionService = {
     const totalIncome = incomes.reduce((sum, item) => sum + item.amount, 0);
     const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
     const currentBalance = totalIncome - totalExpenses;
+
+    const inHandIncome = incomes
+      .filter((i) => i.paymentMode === 'cash')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const inHandExpense = expenses
+      .filter((e) => e.paymentMode === 'cash')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const inHandBalance = inHandIncome - inHandExpense;
+
+    const inAccountIncome = incomes
+      .filter((i) => i.paymentMode !== 'cash')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const inAccountExpense = expenses
+      .filter((e) => e.paymentMode !== 'cash')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const inAccountBalance = inAccountIncome - inAccountExpense;
 
     const thisMonthIncome = incomes
       .filter((item) => isCurrentMonth(item.date))
@@ -73,6 +96,12 @@ export const transactionService = {
         expenseRatio,
         thisMonthIncome,
         thisMonthExpense,
+        inHandBalance,
+        inAccountBalance,
+        inHandIncome,
+        inHandExpense,
+        inAccountIncome,
+        inAccountExpense,
       },
     };
   },

@@ -107,6 +107,29 @@ export const TransactionItem = React.memo<TransactionItemProps>(({
           <Text style={styles.category} numberOfLines={1}>
             {transaction.category}
           </Text>
+          <Text style={styles.dot}>•</Text>
+          <View
+            style={[
+              styles.modeTag,
+              transaction.paymentMode === 'cash' ? styles.modeTagCash : styles.modeTagOnline,
+            ]}
+          >
+            <Ionicons
+              name={transaction.paymentMode === 'cash' ? 'cash-outline' : 'card-outline'}
+              size={10}
+              color={transaction.paymentMode === 'cash' ? '#059669' : colors.primary}
+            />
+            <Text
+              style={[
+                styles.modeTagText,
+                transaction.paymentMode === 'cash'
+                  ? styles.modeTagTextCash
+                  : styles.modeTagTextOnline,
+              ]}
+            >
+              {transaction.paymentMode === 'cash' ? 'Cash' : 'Online'}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -192,5 +215,29 @@ const styles = StyleSheet.create({
   deleteButton: {
     marginTop: 4,
     padding: 2,
+  },
+  modeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: radii.full,
+    gap: 3,
+  },
+  modeTagCash: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  modeTagOnline: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  modeTagText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  modeTagTextCash: {
+    color: '#059669',
+  },
+  modeTagTextOnline: {
+    color: colors.primary,
   },
 });

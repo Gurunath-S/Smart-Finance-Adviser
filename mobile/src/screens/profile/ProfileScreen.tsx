@@ -24,6 +24,7 @@ import { radii, spacing } from '../../theme/spacing';
 import { theme } from '../../theme/theme';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
+import { CashDenominationModal } from '../../components/cash/CashDenominationModal';
 
 export const ProfileScreen: React.FC = () => {
   const {
@@ -39,6 +40,7 @@ export const ProfileScreen: React.FC = () => {
 
   // API Config Modal state
   const [isApiModalVisible, setIsApiModalVisible] = useState(false);
+  const [isCashModalVisible, setIsCashModalVisible] = useState(false);
   const [currentApiUrl, setCurrentApiUrl] = useState(api.defaults.baseURL || getDefaultApiUrl());
   const [inputApiUrl, setInputApiUrl] = useState(currentApiUrl);
   const [testStatus, setTestStatus] = useState<{
@@ -315,6 +317,22 @@ export const ProfileScreen: React.FC = () => {
               </View>
             </>
           )}
+
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.preferenceRow}
+            onPress={() => setIsCashModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.prefIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+              <Ionicons name="cash-outline" size={20} color="#059669" />
+            </View>
+            <View style={styles.prefTextBox}>
+              <Text style={styles.prefLabel}>In-Hand Cash Manager</Text>
+              <Text style={styles.prefSub}>Count & manage physical notes and coins</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* App Info Section */}
@@ -433,6 +451,12 @@ export const ProfileScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Cash In-Hand Notes & Coins Denomination Modal */}
+      <CashDenominationModal
+        visible={isCashModalVisible}
+        onClose={() => setIsCashModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };

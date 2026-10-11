@@ -22,6 +22,7 @@ import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 import { toISODateOnly } from '../../utils/date';
 import { Ionicons } from '@expo/vector-icons';
+import { PaymentMode } from '../../types';
 
 type AddExpenseNavigationProp = NativeStackNavigationProp<AppStackParamList, 'AddExpense'>;
 
@@ -31,6 +32,7 @@ interface AddExpenseScreenProps {
 
 export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }) => {
   const { addExpense } = useTransactions();
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('online');
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('groceries');
@@ -57,6 +59,7 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
       category,
       description: description.trim() || 'Expense record',
       date: toISODateOnly(),
+      paymentMode,
     });
     setIsSubmitting(false);
 
@@ -88,6 +91,55 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
               <Ionicons name="arrow-back" size={24} color={colors.primary} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Add New Expense</Text>
+          </View>
+
+          {/* Payment Mode Selector */}
+          <View style={styles.paymentModeRow}>
+            <TouchableOpacity
+              style={[
+                styles.paymentModeBtn,
+                paymentMode === 'online' && styles.paymentModeBtnActiveOnline,
+              ]}
+              onPress={() => setPaymentMode('online')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="card-outline"
+                size={16}
+                color={paymentMode === 'online' ? colors.primary : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.paymentModeText,
+                  paymentMode === 'online' && styles.paymentModeTextActiveOnline,
+                ]}
+              >
+                In Account (Online/Bank)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentModeBtn,
+                paymentMode === 'cash' && styles.paymentModeBtnActiveCash,
+              ]}
+              onPress={() => setPaymentMode('cash')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="cash-outline"
+                size={16}
+                color={paymentMode === 'cash' ? '#059669' : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.paymentModeText,
+                  paymentMode === 'cash' && styles.paymentModeTextActiveCash,
+                ]}
+              >
+                In Hand (Cash)
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Amount Card */}
@@ -177,5 +229,44 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: spacing.lg,
+  },
+  paymentModeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  paymentModeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 6,
+  },
+  paymentModeBtnActiveOnline: {
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: colors.primary,
+  },
+  paymentModeBtnActiveCash: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderColor: '#059669',
+  },
+  paymentModeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  paymentModeTextActiveOnline: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  paymentModeTextActiveCash: {
+    color: '#059669',
+    fontWeight: '700',
   },
 });

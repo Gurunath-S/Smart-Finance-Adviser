@@ -12,6 +12,12 @@ const defaultSummary: FinancialSummary = {
   expenseRatio: 0,
   thisMonthIncome: 0,
   thisMonthExpense: 0,
+  inHandBalance: 0,
+  inAccountBalance: 0,
+  inHandIncome: 0,
+  inHandExpense: 0,
+  inAccountIncome: 0,
+  inAccountExpense: 0,
 };
 
 let cachedTransactionsData: {

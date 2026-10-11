@@ -243,4 +243,117 @@ router.get('/get-user-transactions/:userId', verifyToken, verifyAdmin, async (re
   }
 });
 
+// GET current user's cash denominations (notes & coins)
+router.get('/cash-denominations', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('cashDenominations').lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const defaultDenominations = {
+      notes: { n500: 0, n200: 0, n100: 0, n50: 0, n20: 0, n10: 0 },
+      coins: { c20: 0, c10: 0, c5: 0, c2: 0, c1: 0 }
+    };
+
+    const denominations = user.cashDenominations || defaultDenominations;
+    const notes = { ...defaultDenominations.notes, ...(denominations.notes || {}) };
+    const coins = { ...defaultDenominations.coins, ...(denominations.coins || {}) };
+
+    const totalNotes =
+      (notes.n500 || 0) * 500 +
+      (notes.n200 || 0) * 200 +
+      (notes.n100 || 0) * 100 +
+      (notes.n50 || 0) * 50 +
+      (notes.n20 || 0) * 20 +
+      (notes.n10 || 0) * 10;
+
+    const totalCoins =
+      (coins.c20 || 0) * 20 +
+      (coins.c10 || 0) * 10 +
+      (coins.c5 || 0) * 5 +
+      (coins.c2 || 0) * 2 +
+      (coins.c1 || 0) * 1;
+
+    const totalInHandCash = totalNotes + totalCoins;
+
+    res.status(200).json({
+      denominations: { notes, coins },
+      totalNotes,
+      totalCoins,
+      totalInHandCash
+    });
+  } catch (err) {
+    console.error("Error fetching cash denominations:", err);
+    res.status(500).json({ message: "Failed to fetch cash denominations", error: err.message });
+  }
+});
+
+// PUT update current user's cash denominations (notes & coins)
+router.put('/cash-denominations', verifyToken, async (req, res) => {
+  try {
+    const { notes = {}, coins = {} } = req.body;
+
+    const cleanNotes = {
+      n500: Math.max(0, parseInt(notes.n500, 10) || 0),
+      n200: Math.max(0, parseInt(notes.n200, 10) || 0),
+      n100: Math.max(0, parseInt(notes.n100, 10) || 0),
+      n50: Math.max(0, parseInt(notes.n50, 10) || 0),
+      n20: Math.max(0, parseInt(notes.n20, 10) || 0),
+      n10: Math.max(0, parseInt(notes.n10, 10) || 0),
+    };
+
+    const cleanCoins = {
+      c20: Math.max(0, parseInt(coins.c20, 10) || 0),
+      c10: Math.max(0, parseInt(coins.c10, 10) || 0),
+      c5: Math.max(0, parseInt(coins.c5, 10) || 0),
+      c2: Math.max(0, parseInt(coins.c2, 10) || 0),
+      c1: Math.max(0, parseInt(coins.c1, 10) || 0),
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      {
+        cashDenominations: {
+          notes: cleanNotes,
+          coins: cleanCoins
+        }
+      },
+      { new: true }
+    ).select('cashDenominations').lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const totalNotes =
+      cleanNotes.n500 * 500 +
+      cleanNotes.n200 * 200 +
+      cleanNotes.n100 * 100 +
+      cleanNotes.n50 * 50 +
+      cleanNotes.n20 * 20 +
+      cleanNotes.n10 * 10;
+
+    const totalCoins =
+      cleanCoins.c20 * 20 +
+      cleanCoins.c10 * 10 +
+      cleanCoins.c5 * 5 +
+      cleanCoins.c2 * 2 +
+      cleanCoins.c1 * 1;
+
+    const totalInHandCash = totalNotes + totalCoins;
+
+    res.status(200).json({
+      message: "Cash denominations updated successfully",
+      denominations: user.cashDenominations,
+      totalNotes,
+      totalCoins,
+      totalInHandCash
+    });
+  } catch (err) {
+    console.error("Error updating cash denominations:", err);
+    res.status(500).json({ message: "Failed to update cash denominations", error: err.message });
+  }
+});
+
 module.exports = router;

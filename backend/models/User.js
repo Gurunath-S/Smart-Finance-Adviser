@@ -16,6 +16,23 @@ const UserSchema = new mongoose.Schema(
     authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     profileImage: { type: String, default: "" },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    cashDenominations: {
+      notes: {
+        n500: { type: Number, default: 0 },
+        n200: { type: Number, default: 0 },
+        n100: { type: Number, default: 0 },
+        n50: { type: Number, default: 0 },
+        n20: { type: Number, default: 0 },
+        n10: { type: Number, default: 0 },
+      },
+      coins: {
+        c20: { type: Number, default: 0 },
+        c10: { type: Number, default: 0 },
+        c5: { type: Number, default: 0 },
+        c2: { type: Number, default: 0 },
+        c1: { type: Number, default: 0 },
+      },
+    },
   },
   { timestamps: true }
 );

@@ -197,6 +197,20 @@ export const GlobalProvider = ({ children }) => {
     return totalIncome() - totalExpenses();
   };
 
+  // In-Hand Cash Balance calculation
+  const inHandBalance = () => {
+    const cashIncome = incomes.filter(i => i.paymentMode === 'cash').reduce((tot, i) => tot + i.amount, 0);
+    const cashExpense = expenses.filter(e => e.paymentMode === 'cash').reduce((tot, e) => tot + e.amount, 0);
+    return cashIncome - cashExpense;
+  };
+
+  // In-Account (Online/Bank) Balance calculation
+  const inAccountBalance = () => {
+    const onlineIncome = incomes.filter(i => i.paymentMode !== 'cash').reduce((tot, i) => tot + i.amount, 0);
+    const onlineExpense = expenses.filter(e => e.paymentMode !== 'cash').reduce((tot, e) => tot + e.amount, 0);
+    return onlineIncome - onlineExpense;
+  };
+
   // Transaction history — last 5 sorted by date
   const transactionHistory = () => {
     const history = [...incomes, ...expenses];
@@ -313,6 +327,8 @@ export const GlobalProvider = ({ children }) => {
         deleteExpense,
         totalExpenses,
         totalBalance,
+        inHandBalance,
+        inAccountBalance,
         transactionHistory,
         error,
         setError,

@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Income } from '../types';
+import { Income, PaymentMode } from '../types';
 
 export interface CreateIncomeData {
   title: string;
@@ -7,6 +7,7 @@ export interface CreateIncomeData {
   category: string;
   description: string;
   date: string;
+  paymentMode?: PaymentMode;
 }
 
 export const incomeService = {

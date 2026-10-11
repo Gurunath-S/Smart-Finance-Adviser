@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Expense } from '../types';
+import { Expense, PaymentMode } from '../types';
 
 export interface CreateExpenseData {
   title: string;
@@ -7,6 +7,7 @@ export interface CreateExpenseData {
   category: string;
   description: string;
   date: string;
+  paymentMode?: PaymentMode;
 }
 
 export const expenseService = {

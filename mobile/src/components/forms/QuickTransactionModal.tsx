@@ -21,6 +21,7 @@ import { FormInput } from '../common/FormInput';
 import { PrimaryButton } from '../common/PrimaryButton';
 import { CategoryPicker } from './CategoryPicker';
 import { toISODateOnly } from '../../utils/date';
+import { PaymentMode } from '../../types';
 
 interface QuickTransactionModalProps {
   visible: boolean;
@@ -31,6 +32,7 @@ interface QuickTransactionModalProps {
     category: string;
     description: string;
     date: string;
+    paymentMode?: PaymentMode;
   }) => Promise<boolean>;
   onAddExpense: (data: {
     title: string;
@@ -38,6 +40,7 @@ interface QuickTransactionModalProps {
     category: string;
     description: string;
     date: string;
+    paymentMode?: PaymentMode;
   }) => Promise<boolean>;
 }
 
@@ -48,6 +51,7 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
   onAddExpense,
 }) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('online');
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('groceries');
@@ -78,8 +82,9 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
       title: title.trim(),
       amount: parsedAmount,
       category: category || (type === 'income' ? 'salary' : 'other'),
-      description: description.trim() || `${type === 'income' ? 'Income' : 'Expense'} record`,
+      description: description.trim() || `${type === 'income' ? 'Income' : 'Expense'} record (${paymentMode === 'cash' ? 'Cash' : 'Online'})`,
       date: toISODateOnly(),
+      paymentMode,
     };
 
     let success = false;
@@ -169,6 +174,55 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
                       ]}
                     >
                       Expense
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Payment Mode Selector: In Account vs In Hand */}
+                <View style={styles.paymentModeRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.paymentModeBtn,
+                      paymentMode === 'online' && styles.paymentModeBtnActiveOnline,
+                    ]}
+                    onPress={() => setPaymentMode('online')}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name="card-outline"
+                      size={15}
+                      color={paymentMode === 'online' ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.paymentModeText,
+                        paymentMode === 'online' && styles.paymentModeTextActiveOnline,
+                      ]}
+                    >
+                      In Account (Bank/UPI)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.paymentModeBtn,
+                      paymentMode === 'cash' && styles.paymentModeBtnActiveCash,
+                    ]}
+                    onPress={() => setPaymentMode('cash')}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name="cash-outline"
+                      size={15}
+                      color={paymentMode === 'cash' ? '#059669' : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.paymentModeText,
+                        paymentMode === 'cash' && styles.paymentModeTextActiveCash,
+                      ]}
+                    >
+                      In Hand (Cash)
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -300,5 +354,44 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: spacing.md,
+  },
+  paymentModeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  paymentModeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceVariant,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 6,
+  },
+  paymentModeBtnActiveOnline: {
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: colors.primary,
+  },
+  paymentModeBtnActiveCash: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderColor: '#059669',
+  },
+  paymentModeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  paymentModeTextActiveOnline: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  paymentModeTextActiveCash: {
+    color: '#059669',
+    fontWeight: '700',
   },
 });

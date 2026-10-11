@@ -33,6 +33,11 @@ const IncomeSchema = new mongoose.Schema({
     userId: {
         type: String,
         required: true,
+    },
+    paymentMode: {
+        type: String,
+        enum: ['cash', 'online'],
+        default: 'online'
     }
 }, { timestamps: true });
 

@@ -2,7 +2,7 @@ const IncomeSchema = require("../models/IncomeModel");
 const { parseMonetaryAmount } = require("../utils/currency");
 
 exports.addIncome = async (req, res) => {
-    const { title, amount, category, description, date } = req.body;
+    const { title, amount, category, description, date, paymentMode } = req.body;
     const userId = req.userId;
 
     if (!title || !category || !description || !date) {
@@ -15,9 +15,17 @@ exports.addIncome = async (req, res) => {
     }
 
     try {
-        const income = new IncomeSchema({ title, amount: parsedAmount, category, description, date, userId });
+        const income = new IncomeSchema({
+            title,
+            amount: parsedAmount,
+            category,
+            description,
+            date,
+            userId,
+            paymentMode: paymentMode === 'cash' ? 'cash' : 'online'
+        });
         await income.save();
-        res.status(200).json({ message: 'Income Added' });
+        res.status(200).json({ message: 'Income Added', income });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
