@@ -68,26 +68,38 @@ function Dashboard() {
 }
 
 const DashboardStyled = styled.div`
-    padding: 2rem;
+    padding: 1.5rem;
     background: transparent;
+
+    @media (max-width: 992px) {
+        padding: 0.5rem;
+    }
+
+    h1 {
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        margin-bottom: 0.5rem;
+    }
 
     .stats-con {
         background: transparent;
-        padding: 2rem;
+        padding: 1rem 0;
         border-radius: 20px;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 2rem;
-        min-height: 80vh; 
+        min-height: auto;
+
         .chart-con {
             grid-column: 1 / 4;
-            height: 400px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
 
             .amount-con {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 2rem;
-                margin-top: 2rem;
+                gap: 1.5rem;
+                margin-top: 1.5rem;
 
                 .income,
                 .expense {
@@ -103,9 +115,14 @@ const DashboardStyled = styled.div`
                     border-radius: 20px;
                     padding: 1rem;
 
+                    h2 {
+                        font-size: clamp(0.95rem, 2vw, 1.25rem);
+                    }
+
                     p {
-                        font-size: 3.5rem;
+                        font-size: clamp(1.8rem, 3.5vw, 3rem);
                         font-weight: 700;
+                        word-break: break-word;
                     }
                 }
 
@@ -118,8 +135,8 @@ const DashboardStyled = styled.div`
 
                     p {
                         color: var(--color-green);
-                        opacity: 0.6;
-                        font-size: 4.5rem;
+                        opacity: 0.8;
+                        font-size: clamp(2rem, 4.5vw, 3.8rem);
                     }
                 }
             }
@@ -129,17 +146,18 @@ const DashboardStyled = styled.div`
             grid-column: 4 / -1;
 
             h2 {
-                margin: 1rem 0;
+                margin: 0.8rem 0;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                font-size: clamp(1rem, 2vw, 1.3rem);
             }
 
             .salary-title {
-                font-size: 1.2rem;
+                font-size: clamp(0.9rem, 1.8vw, 1.1rem);
 
                 span {
-                    font-size: 1.8rem;
+                    font-size: clamp(1.2rem, 2.5vw, 1.6rem);
                 }
             }
 
@@ -147,93 +165,99 @@ const DashboardStyled = styled.div`
                 background: #FCF6F9;
                 border: 2px solid #FFFFFF;
                 box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
-                padding: 1rem;
-                border-radius: 20px;
+                padding: 0.8rem 1rem;
+                border-radius: 16px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
 
                 p {
                     font-weight: 600;
-                    font-size: 1.6rem;
+                    font-size: clamp(1.1rem, 2vw, 1.4rem);
                 }
             }
         }
     }
 
-   /* Responsive Styles */
-@media (max-width: 1200px) {
-    .stats-con {
-        grid-template-columns: 1fr 1fr; /* Maintain two columns */
-        
-        .chart-con {
-            grid-column: 1 / 3; /* Make the chart take full width */
-            height:200px;
-        }
-        
-        .history-con {
-            grid-column: 1 / 3; /* Make history take full width */
-        }
-    }
-}
+    /* Responsive Breakpoints */
+    @media (max-width: 1200px) {
+        .stats-con {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
 
-@media (max-width: 768px) {
-    .stats-con {
-        grid-template-columns: 1fr; /* Single column layout for smaller tablets */
-        
-        .chart-con {
-            .amount-con {
-                grid-template-columns: 1fr 1fr; /* Keep two columns for income, expense, and balance */
-                .income, .expense, .balance {
-                    padding: 0.8rem;
-                    
-                    p {
-                        font-size: 2.8rem;
+            .chart-con {
+                grid-column: 1 / -1;
+
+                .amount-con {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
+
+                    .income, .expense {
+                        grid-column: span 1;
+                    }
+
+                    .balance {
+                        grid-column: 1 / -1;
                     }
                 }
-                
-                .balance p {
-                    font-size: 3.5rem;
-                }
+            }
+
+            .history-con {
+                grid-column: 1 / -1;
+                margin-top: 1rem;
             }
         }
     }
-}
 
-@media (max-width: 480px) {
-    .stats-con {
-        grid-template-columns: 1fr; /* Full-width single column for mobile */
-        
-        .chart-con {
-            height: auto;
+    @media (max-width: 768px) {
+        .stats-con {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
 
-            .amount-con {
-                grid-template-columns: 1fr; /* Make all items stack vertically */
-                gap: 1rem;
+            .chart-con {
+                .amount-con {
+                    grid-template-columns: 1fr;
+                    gap: 0.8rem;
+                    margin-top: 1rem;
 
-                .income, .expense, .balance {
-                    padding: 0.6rem;
+                    .income, .expense, .balance {
+                        grid-column: span 1;
+                        padding: 0.8rem;
+                        border-radius: 16px;
 
-                    p {
+                        p {
+                            font-size: 1.8rem;
+                        }
+                    }
+
+                    .balance p {
                         font-size: 2.2rem;
                     }
                 }
+            }
 
-                .balance p {
-                    font-size: 2.8rem;
+            .history-con {
+                margin-top: 1rem;
+
+                .salary-item {
+                    padding: 0.7rem 0.9rem;
+                    p {
+                        font-size: 1.1rem;
+                    }
                 }
             }
         }
+    }
 
-        .history-con {
-            .salary-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
+    @media (max-width: 480px) {
+        padding: 0.2rem;
+
+        .stats-con {
+            .history-con {
+                margin-top: 0.8rem;
             }
         }
     }
-}
 `;
 
 

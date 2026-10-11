@@ -72,9 +72,24 @@ function Chart() {
     }
 
 
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    boxWidth: 12,
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    }
+
     return (
-        <ChartStyled >
-            <Line data={data} />
+        <ChartStyled>
+            <Line data={data} options={options} />
         </ChartStyled>
     )
 }
@@ -85,7 +100,14 @@ const ChartStyled = styled.div`
     box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
     padding: 1rem;
     border-radius: 20px;
-    height: 100%;
+    height: 320px;
+    width: 100%;
+    position: relative;
+
+    @media (max-width: 768px) {
+        height: 240px;
+        padding: 0.6rem;
+    }
 `;
 
 export default Chart

@@ -37,16 +37,29 @@ function History() {
 const HistoryStyled = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.8rem;
+    width: 100%;
+
+    h2 {
+        font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+    }
+
     .history-item{
         background: #FCF6F9;
         border: 2px solid #FFFFFF;
         box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
-        padding: 1rem;
-        border-radius: 20px;
+        padding: 0.8rem 1rem;
+        border-radius: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 0.5rem;
+
+        p {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 600;
+            word-break: break-word;
+        }
     }
 `;
 
