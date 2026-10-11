@@ -12,6 +12,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.smartfinanceadviser.mobile"
     },
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#F8FAFC",
+      "translucent": false
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#171744",

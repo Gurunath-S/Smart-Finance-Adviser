@@ -14,25 +14,41 @@ const defaultSummary: FinancialSummary = {
   thisMonthExpense: 0,
 };
 
+let cachedTransactionsData: {
+  incomes: Income[];
+  expenses: Expense[];
+  unifiedTransactions: UnifiedTransaction[];
+  summary: FinancialSummary;
+} | null = null;
+
 export const useTransactions = () => {
-  const [incomes, setIncomes] = useState<Income[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [unifiedTransactions, setUnifiedTransactions] = useState<UnifiedTransaction[]>([]);
-  const [summary, setSummary] = useState<FinancialSummary>(defaultSummary);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [incomes, setIncomes] = useState<Income[]>(
+    () => cachedTransactionsData?.incomes || []
+  );
+  const [expenses, setExpenses] = useState<Expense[]>(
+    () => cachedTransactionsData?.expenses || []
+  );
+  const [unifiedTransactions, setUnifiedTransactions] = useState<UnifiedTransaction[]>(
+    () => cachedTransactionsData?.unifiedTransactions || []
+  );
+  const [summary, setSummary] = useState<FinancialSummary>(
+    () => cachedTransactionsData?.summary || defaultSummary
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(!cachedTransactionsData);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTransactions = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setIsRefreshing(true);
-    } else {
+    } else if (!cachedTransactionsData) {
       setIsLoading(true);
     }
     setError(null);
 
     try {
       const data = await transactionService.fetchAllTransactions();
+      cachedTransactionsData = data;
       setIncomes(data.incomes);
       setExpenses(data.expenses);
       setUnifiedTransactions(data.unifiedTransactions);

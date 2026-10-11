@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   RefreshControl,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
 import { TransactionItem } from '../../components/transactions/TransactionItem';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -70,15 +71,25 @@ export const TransactionsScreen: React.FC = () => {
     });
   }, [unifiedTransactions, typeFilter, dateFilter, searchQuery]);
 
-  const handleDelete = async (id: string) => {
-    const target = unifiedTransactions.find((t) => t._id === id);
-    if (!target) return;
-    if (target.type === 'income') {
-      await deleteIncome(id);
-    } else {
-      await deleteExpense(id);
-    }
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const target = unifiedTransactions.find((t) => t._id === id);
+      if (!target) return;
+      if (target.type === 'income') {
+        await deleteIncome(id);
+      } else {
+        await deleteExpense(id);
+      }
+    },
+    [unifiedTransactions, deleteIncome, deleteExpense]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof filteredTransactions)[0] }) => (
+      <TransactionItem transaction={item} onDelete={handleDelete} />
+    ),
+    [handleDelete]
+  );
 
   if (isLoading && !isRefreshing) {
     return (
@@ -95,6 +106,10 @@ export const TransactionsScreen: React.FC = () => {
         keyExtractor={(item) => `${item.type}-${item._id}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -195,9 +210,7 @@ export const TransactionsScreen: React.FC = () => {
             }}
           />
         }
-        renderItem={({ item }) => (
-          <TransactionItem transaction={item} onDelete={handleDelete} />
-        )}
+        renderItem={renderItem}
       />
 
       {/* Floating Action Button */}

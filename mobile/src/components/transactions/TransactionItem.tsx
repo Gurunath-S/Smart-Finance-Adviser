@@ -15,7 +15,7 @@ interface TransactionItemProps {
   style?: ViewStyle;
 }
 
-export const TransactionItem: React.FC<TransactionItemProps> = ({
+export const TransactionItem = React.memo<TransactionItemProps>(({
   transaction,
   onDelete,
   onPress,
@@ -133,7 +133,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

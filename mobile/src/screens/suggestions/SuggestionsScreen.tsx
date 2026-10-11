@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
 import { suggestionService } from '../../services/suggestionService';
 import { SuggestionCard } from '../../components/cards/SuggestionCard';

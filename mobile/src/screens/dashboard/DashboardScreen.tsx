@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../../types';
@@ -50,17 +50,23 @@ export const DashboardScreen: React.FC = () => {
     return 'Good evening';
   };
 
-  const recentTransactions = unifiedTransactions.slice(0, 5);
+  const recentTransactions = useMemo(
+    () => unifiedTransactions.slice(0, 5),
+    [unifiedTransactions]
+  );
 
-  const handleDeleteTransaction = async (id: string) => {
-    const target = unifiedTransactions.find((t) => t._id === id);
-    if (!target) return;
-    if (target.type === 'income') {
-      await deleteIncome(id);
-    } else {
-      await deleteExpense(id);
-    }
-  };
+  const handleDeleteTransaction = useCallback(
+    async (id: string) => {
+      const target = unifiedTransactions.find((t) => t._id === id);
+      if (!target) return;
+      if (target.type === 'income') {
+        await deleteIncome(id);
+      } else {
+        await deleteExpense(id);
+      }
+    },
+    [unifiedTransactions, deleteIncome, deleteExpense]
+  );
 
   if (isLoading && !isRefreshing) {
     return (
