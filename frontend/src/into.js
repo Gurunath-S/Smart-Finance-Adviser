@@ -50,18 +50,41 @@ function SideNav() {
 
 const AppStyled = styled.div`
   height: 100vh;
-  ${'' /* background-image: url(${props => props.bg}); */}
-  ${'' /* background: rgba(250, 229, 250, 0.6); */}
   position: relative;
-  main{
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 992px) {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  main {
     flex: 1;
     background: rgba(250, 229, 250, 0.6);
     border: 3px solid #FFFFFF;
     backdrop-filter: blur(4.5px);
     border-radius: 32px;
     overflow-x: hidden;
-    &::-webkit-scrollbar{
-      width: 0;
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(34, 34, 96, 0.2);
+      border-radius: 10px;
+    }
+
+    @media (max-width: 992px) {
+      border-radius: 20px;
+      border: 2px solid #FFFFFF;
+      overflow: visible;
+      width: 100%;
+    }
+
+    @media (max-width: 576px) {
+      border-radius: 16px;
+      border: 1.5px solid #FFFFFF;
     }
   }
 `;

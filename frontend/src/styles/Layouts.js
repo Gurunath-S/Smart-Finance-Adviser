@@ -11,7 +11,19 @@ export const MainLayout = styled(motion.div).attrs(() => ({
     display: flex;
     gap: 2rem;
     border-radius: 20px;
-    ${'' /* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */}
+
+    @media (max-width: 992px) {
+        padding: 1rem;
+        gap: 1.2rem;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    @media (max-width: 576px) {
+        padding: 0.6rem 0.4rem;
+        gap: 0.8rem;
+    }
 `;
 
 export const InnerLayout = styled(motion.div).attrs(() => ({
@@ -21,10 +33,17 @@ export const InnerLayout = styled(motion.div).attrs(() => ({
 }))`
     padding: 2rem 1.5rem;
     width: 100%;
-    ${'' /* background: white; */}
     border-radius: 15px;
-    ${'' /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); */}
     transform-origin: top;
     overflow: hidden;
+
+    @media (max-width: 992px) {
+        padding: 1.25rem 1rem;
+    }
+
+    @media (max-width: 576px) {
+        padding: 0.75rem 0.5rem;
+        border-radius: 12px;
+    }
 `;
 

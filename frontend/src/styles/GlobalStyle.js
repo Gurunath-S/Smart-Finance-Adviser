@@ -20,9 +20,12 @@ export const GlobalStyle = createGlobalStyle`
 
     body{
         font-family: 'Nunito', sans-serif;
-        font-size: clamp(1rem, 1.5vw, 1.2rem);
-        overflow: hidden;
+        font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+        overflow-x: hidden;
+        overflow-y: auto;
         color: rgba(34, 34, 96, .6);
+        min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
     }
 
     h1, h2, h3, h4, h5, h6{
