@@ -68,6 +68,103 @@ router.put('/update-profile-image', verifyToken, upload.single('image'), async (
   }
 });
 
+// GET current user profile
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user profile", error);
+    res.status(500).json({ message: "Failed to fetch profile", error: error.message });
+  }
+});
+
+// PUT update user profile (username, email)
+router.put("/profile", verifyToken, async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (username && username.trim() !== "") {
+      const trimmedUsername = username.trim();
+      if (trimmedUsername !== user.username) {
+        const existingUsername = await User.findOne({ username: trimmedUsername });
+        if (existingUsername) {
+          return res.status(400).json({ message: "Username is already taken" });
+        }
+        user.username = trimmedUsername;
+      }
+    }
+
+    if (email && email.trim() !== "") {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (normalizedEmail !== user.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(normalizedEmail)) {
+          return res.status(400).json({ message: "Invalid email format" });
+        }
+        const existingEmail = await User.findOne({ email: normalizedEmail });
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email is already registered" });
+        }
+        user.email = normalizedEmail;
+      }
+    }
+
+    await user.save();
+    const { password: _, ...safeUser } = user.toObject();
+    res.status(200).json({ message: "Profile updated successfully", user: safeUser });
+  } catch (error) {
+    console.error("Error updating user profile", error);
+    res.status(500).json({ message: "Failed to update profile", error: error.message });
+  }
+});
+
+// PUT change user password
+router.put("/change-password", verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.authProvider === 'google' && !user.password) {
+      return res.status(400).json({ 
+        message: "This account uses Google Sign-In and does not have a local password." 
+      });
+    }
+
+    if (!currentPassword) {
+      return res.status(400).json({ message: "Current password is required" });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error changing password", error);
+    res.status(500).json({ message: "Failed to change password", error: error.message });
+  }
+});
+
 // GET all users (Admin only)
 router.get("/get-users", verifyToken, verifyAdmin, async (req, res) => {
   try {
