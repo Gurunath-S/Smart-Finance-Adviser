@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Switch,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +26,15 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
 
 export const ProfileScreen: React.FC = () => {
-  const { user, logout, updateUserAvatar } = useAuth();
+  const {
+    user,
+    logout,
+    updateUserAvatar,
+    isBiometricsAvailable,
+    isBiometricsEnabled,
+    biometricType,
+    toggleBiometrics,
+  } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
 
   // API Config Modal state
@@ -271,6 +280,41 @@ export const ProfileScreen: React.FC = () => {
             </View>
             <Ionicons name="checkmark-circle" size={18} color={colors.income} />
           </View>
+
+          {isBiometricsAvailable && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.preferenceRow}>
+                <View style={styles.prefIconBox}>
+                  <Ionicons
+                    name={biometricType === 'Face ID' ? 'scan-outline' : 'finger-print-outline'}
+                    size={20}
+                    color={colors.primary}
+                  />
+                </View>
+                <View style={styles.prefTextBox}>
+                  <Text style={styles.prefLabel}>{biometricType} Unlock</Text>
+                  <Text style={styles.prefSub}>
+                    {isBiometricsEnabled ? 'Quick unlock enabled' : 'Require password every time'}
+                  </Text>
+                </View>
+                <Switch
+                  value={isBiometricsEnabled}
+                  onValueChange={async (val) => {
+                    const ok = await toggleBiometrics(val);
+                    if (!ok && val) {
+                      Alert.alert(
+                        'Biometric Authorization Failed',
+                        `Could not activate ${biometricType}. Please ensure biometrics are configured in device settings.`
+                      );
+                    }
+                  }}
+                  trackColor={{ false: colors.border, true: colors.primaryLight }}
+                  thumbColor={isBiometricsEnabled ? colors.primary : colors.white}
+                />
+              </View>
+            </>
+          )}
         </View>
 
         {/* App Info Section */}

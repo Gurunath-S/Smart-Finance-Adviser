@@ -71,13 +71,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isBiometricSubmitting, setIsBiometricSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
 
-  const { login, loginWithGoogle, error: authError, clearError } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+    loginWithBiometrics,
+    isBiometricsAvailable,
+    isBiometricsEnabled,
+    biometricType,
+    savedBiometricUser,
+    error: authError,
+    clearError,
+  } = useAuth();
 
   const redirectUri = makeRedirectUri({
     scheme: 'smartfinanceadviser',
   });
+
+  // Automatically offer biometric unlock if previously enabled and saved session exists
+  const hasPromptedBioRef = React.useRef(false);
+  useEffect(() => {
+    if (isBiometricsAvailable && isBiometricsEnabled && savedBiometricUser && !hasPromptedBioRef.current) {
+      hasPromptedBioRef.current = true;
+      const timer = setTimeout(() => {
+        handleBiometricLogin();
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isBiometricsAvailable, isBiometricsEnabled, savedBiometricUser]);
+
+  const handleBiometricLogin = async () => {
+    clearError();
+    setIsBiometricSubmitting(true);
+    await loginWithBiometrics();
+    setIsBiometricSubmitting(false);
+  };
 
   // Web and Expo Go compatible Google Auth hook
   const [_webRequest, webResponse, promptWebAsync] = Google.useIdTokenAuthRequest({
@@ -200,6 +230,39 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Ionicons name="alert-circle" size={18} color={colors.expense} />
                 <Text style={styles.errorBannerText}>{authError}</Text>
               </View>
+            )}
+
+            {/* Quick Biometric Unlock Card */}
+            {isBiometricsAvailable && (savedBiometricUser || isBiometricsEnabled) && (
+              <TouchableOpacity
+                style={styles.biometricBtn}
+                onPress={handleBiometricLogin}
+                disabled={isSubmitting || isGoogleSubmitting || isBiometricSubmitting}
+                activeOpacity={0.8}
+              >
+                {isBiometricSubmitting ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <>
+                    <View style={styles.biometricIconBadge}>
+                      <Ionicons
+                        name={biometricType === 'Face ID' ? 'scan' : 'finger-print'}
+                        size={24}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <View style={styles.biometricTextWrap}>
+                      <Text style={styles.biometricBtnTitle}>Unlock with {biometricType}</Text>
+                      <Text style={styles.biometricBtnSub}>
+                        {savedBiometricUser
+                          ? `Fast sign-in as @${savedBiometricUser.username}`
+                          : `Authenticate with your ${biometricType}`}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                  </>
+                )}
+              </TouchableOpacity>
             )}
 
             <FormInput
@@ -387,5 +450,37 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: colors.brand,
     fontWeight: '700',
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  biometricIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.primaryLight + '25',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  biometricTextWrap: {
+    flex: 1,
+  },
+  biometricBtnTitle: {
+    ...typography.bodyMedium,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  biometricBtnSub: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
 });
