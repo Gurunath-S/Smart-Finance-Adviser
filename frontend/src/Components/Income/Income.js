@@ -1,17 +1,23 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useGlobalContext } from '../../context/globalContext';
 import { InnerLayout } from '../../styles/Layouts';
 import Form from '../Form/Form';
 import IncomeItem from '../IncomeItem/IncomeItem';
+import Pagination from '../Pagination/Pagination';
 
 function Income() {
     const { incomes, getIncomes, deleteIncome, totalIncome } = useGlobalContext();
+    const [page, setPage] = useState(1);
+    const pageSize = 5;
 
     useEffect(() => {
         getIncomes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const sortedIncomes = [...incomes].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const paginatedIncomes = sortedIncomes.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <IncomeStyled>
@@ -30,23 +36,31 @@ function Income() {
                                 No income records found. Add your first income using the form.
                             </p>
                         ) : (
-                            incomes.map((income) => {
-                                const { _id, title, amount, date, category, description, type } = income;
-                                return (
-                                    <IncomeItem
-                                        key={_id}
-                                        id={_id}
-                                        title={title}
-                                        description={description}
-                                        amount={amount}
-                                        date={date}
-                                        type={type}
-                                        category={category}
-                                        indicatorColor="var(--color-green)"
-                                        deleteItem={deleteIncome}
-                                    />
-                                );
-                            })
+                            <>
+                                {paginatedIncomes.map((income) => {
+                                    const { _id, title, amount, date, category, description, type } = income;
+                                    return (
+                                        <IncomeItem
+                                            key={_id}
+                                            id={_id}
+                                            title={title}
+                                            description={description}
+                                            amount={amount}
+                                            date={date}
+                                            type={type}
+                                            category={category}
+                                            indicatorColor="var(--color-green)"
+                                            deleteItem={deleteIncome}
+                                        />
+                                    );
+                                })}
+                                <Pagination
+                                    currentPage={page}
+                                    totalItems={incomes.length}
+                                    pageSize={pageSize}
+                                    onPageChange={setPage}
+                                />
+                            </>
                         )}
                     </div>
                 </div>

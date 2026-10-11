@@ -1,17 +1,23 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useGlobalContext } from '../../context/globalContext';
 import { InnerLayout } from '../../styles/Layouts';
 import IncomeItem from '../IncomeItem/IncomeItem';
 import ExpenseForm from './ExpenseForm';
+import Pagination from '../Pagination/Pagination';
 
 function Expenses() {
     const { expenses, getExpenses, deleteExpense, totalExpenses } = useGlobalContext()
+    const [page, setPage] = useState(1);
+    const pageSize = 5;
 
     useEffect(() => {
         getExpenses()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const paginatedExpenses = sortedExpenses.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <ExpenseStyled>
@@ -28,21 +34,29 @@ function Expenses() {
                                 No expenses recorded yet. Add your first expense using the form.
                             </p>
                         ) : (
-                            expenses.map((expense) => {
-                                const {_id, title, amount, date, category, description, type} = expense;
-                                return <IncomeItem
-                                    key={_id}
-                                    id={_id} 
-                                    title={title} 
-                                    description={description} 
-                                    amount={amount} 
-                                    date={date} 
-                                    type={type || 'expense'}
-                                    category={category} 
-                                    indicatorColor="var(--color-delete)"
-                                    deleteItem={deleteExpense}
+                            <>
+                                {paginatedExpenses.map((expense) => {
+                                    const {_id, title, amount, date, category, description, type} = expense;
+                                    return <IncomeItem
+                                        key={_id}
+                                        id={_id} 
+                                        title={title} 
+                                        description={description} 
+                                        amount={amount} 
+                                        date={date} 
+                                        type={type || 'expense'}
+                                        category={category} 
+                                        indicatorColor="var(--color-delete)"
+                                        deleteItem={deleteExpense}
+                                    />
+                                })}
+                                <Pagination
+                                    currentPage={page}
+                                    totalItems={expenses.length}
+                                    pageSize={pageSize}
+                                    onPageChange={setPage}
                                 />
-                            })
+                            </>
                         )}
                     </div>
                 </div>
