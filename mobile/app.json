@@ -38,7 +38,13 @@
       "expo-secure-store",
       "expo-updates",
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Smart Finance Adviser to use Face ID / Biometrics for secure authentication."
+        }
+      ]
     ],
     "extra": {
       "eas": {
