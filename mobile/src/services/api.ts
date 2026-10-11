@@ -20,7 +20,7 @@ export const getDefaultApiUrl = (): string => {
 
 export const api = axios.create({
   baseURL: getDefaultApiUrl(),
-  timeout: 45000,
+  timeout: 15000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -57,34 +57,38 @@ export const getCustomApiUrl = async (): Promise<string | null> => {
 };
 
 // Initialize custom URL if previously saved
-// (async () => {
-//   try {
-//     const savedUrl = await SecureStore.getItemAsync(CUSTOM_API_URL_KEY);
-//     if (savedUrl) {
-//       api.defaults.baseURL = savedUrl;
-//     }
-//   } catch {
-//     // Ignore initialization read errors
-//   }
-// })();
+(async () => {
+  try {
+    const savedUrl = await SecureStore.getItemAsync(CUSTOM_API_URL_KEY);
+    if (savedUrl) {
+      api.defaults.baseURL = savedUrl;
+    }
+  } catch {
+    // Ignore initialization read errors
+  }
+})();
 
-// Request Interceptor: Attach JWT Token
+// Request Interceptor: Attach JWT Token & custom URL
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
+      const customUrl = await SecureStore.getItemAsync(CUSTOM_API_URL_KEY);
+      if (customUrl) {
+        config.baseURL = customUrl;
+      }
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (e) {
-      console.warn('Failed to read auth token from SecureStore:', e);
+      console.warn('Failed to read config from SecureStore:', e);
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Auto-logout on 401 & Rate Limit formatting on 429
+// Response Interceptor: Auto-logout on 401 & Friendly Network Error formatting
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<{ message?: string; retryAfterSeconds?: number }>) => {
@@ -101,6 +105,9 @@ api.interceptors.response.use(
       const retrySec = error.response.data?.retryAfterSeconds || error.response.headers['retry-after'] || 60;
       const customMsg = error.response.data?.message || `Too many requests. Please wait ${retrySec} seconds before retrying.`;
       error.message = customMsg;
+    } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+      const currentUrl = api.defaults.baseURL;
+      error.message = `Cannot reach backend at ${currentUrl}. Check your Wi-Fi connection or server address.`;
     }
     return Promise.reject(error);
   }
