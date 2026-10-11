@@ -138,7 +138,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       }
     } catch (error: any) {
       console.warn('Google Auth Error:', error);
-      Alert.alert('Google Sign-In Error', error?.message || 'Authentication failed.');
+      let errorMsg = error?.message || 'Authentication failed.';
+      if (error?.code === '10' || error?.code === 10 || errorMsg.includes('DEVELOPER_ERROR')) {
+        errorMsg = 'Configuration error (Code 10 / DEVELOPER_ERROR). Please ensure the build SHA-1 fingerprint is registered in Google Cloud Console.';
+      }
+      Alert.alert('Google Sign-In Error', errorMsg);
       setIsGoogleSubmitting(false);
     }
   };
