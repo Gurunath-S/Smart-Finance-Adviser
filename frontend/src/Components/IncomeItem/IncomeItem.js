@@ -63,30 +63,35 @@ function IncomeItem({
     }
 
     return (
-        <IncomeItemStyled indicator={indicatorColor}>
+        <IncomeItemStyled indicator={indicatorColor} isExpense={type === 'expense'}>
             <div className="icon">
                 {type === 'expense' ? expenseCatIcon() : categoryIcon()}
             </div>
             <div className="content">
-                <h5>{title}</h5>
+                <div className="title-row">
+                    <h5>{title}</h5>
+                    <span className="category-pill">{category}</span>
+                </div>
                 <div className="inner-content">
                     <div className="text">
-                        <p>{dollar} {amount}</p>
+                        <p className="amount-p">{dollar} {amount}</p>
                         <p>{calender} {dateFormat(date)}</p>
-                        <p>
-                            {comment}
-                            {description}
-                        </p>
+                        {description && (
+                            <p className="desc-p">
+                                {comment}
+                                {description}
+                            </p>
+                        )}
                     </div>
                     <div className="btn-con">
                         <Button 
                             icon={trash}
-                            bPad={'1rem'}
+                            bPad={'0.75rem'}
                             bRad={'50%'}
-                            bg={'var(--primary-color)'}
-                            color={'#fff'}
-                            iColor={'#fff'}
-                            hColor={'var(--color-green)'}
+                            bg={'rgba(239, 68, 68, 0.1)'}
+                            color={'#ef4444'}
+                            iColor={'#ef4444'}
+                            hColor={'#fff'}
                             onClick={() => deleteItem(id)}
                         />
                     </div>
@@ -97,17 +102,24 @@ function IncomeItem({
 }
 
 const IncomeItemStyled = styled.div`
-    background: #FCF6F9;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
     border: 2px solid #FFFFFF;
-    box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.06);
+    box-shadow: 0px 4px 18px rgba(0, 0, 0, 0.04);
     border-radius: 20px;
-    padding: 1rem;
+    padding: 1.1rem;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.2rem;
     width: 100%;
     color: #222260;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.07);
+    }
 
     @media (max-width: 576px) {
         padding: 0.75rem;
@@ -145,25 +157,43 @@ const IncomeItemStyled = styled.div`
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: .3rem;
+        gap: .4rem;
         min-width: 0;
 
-        h5{
-            font-size: clamp(1rem, 2.2vw, 1.3rem);
-            padding-left: 1.8rem;
-            position: relative;
-            word-break: break-word;
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
 
-            &::before{
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: .8rem;
-                height: .8rem;
-                border-radius: 50%;
-                background: ${props => props.indicator};
+            h5{
+                font-size: clamp(1rem, 2.2vw, 1.3rem);
+                padding-left: 1.8rem;
+                position: relative;
+                word-break: break-word;
+                font-weight: 700;
+
+                &::before{
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: .8rem;
+                    height: .8rem;
+                    border-radius: 50%;
+                    background: ${props => props.indicator};
+                }
+            }
+
+            .category-pill {
+                background: rgba(99, 102, 241, 0.1);
+                color: #4f46e5;
+                font-size: 0.78rem;
+                font-weight: 600;
+                padding: 0.2rem 0.55rem;
+                border-radius: 6px;
+                text-transform: capitalize;
             }
         }
 
@@ -197,6 +227,18 @@ const IncomeItemStyled = styled.div`
                     opacity: 0.85;
                     font-size: clamp(0.85rem, 1.8vw, 1rem);
                     word-break: break-word;
+                }
+
+                .amount-p {
+                    font-weight: 800;
+                    font-size: clamp(1rem, 2vw, 1.2rem);
+                    color: ${props => props.isExpense ? '#ef4444' : '#10b981'};
+                    opacity: 1;
+                }
+
+                .desc-p {
+                    color: #64748b;
+                    font-style: italic;
                 }
             }
 
