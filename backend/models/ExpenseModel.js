@@ -38,6 +38,14 @@ const ExpenseSchema = new mongoose.Schema({
         type: String,
         enum: ['cash', 'online'],
         default: 'online'
+    },
+    excludeFromTotal: {
+        type: Boolean,
+        default: false
+    },
+    omittedAmount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

@@ -276,12 +276,18 @@ router.get('/cash-denominations', verifyToken, async (req, res) => {
       (coins.c1 || 0) * 1;
 
     const totalInHandCash = totalNotes + totalCoins;
+    const omittedAmount = denominations.omittedAmount || 0;
+    const isOmittedActive = denominations.isOmittedActive !== undefined ? Boolean(denominations.isOmittedActive) : (omittedAmount > 0);
+    const effectiveInHandCash = isOmittedActive ? Math.max(0, totalInHandCash - omittedAmount) : totalInHandCash;
 
     res.status(200).json({
-      denominations: { notes, coins },
+      denominations: { notes, coins, omittedAmount, isOmittedActive },
       totalNotes,
       totalCoins,
-      totalInHandCash
+      totalInHandCash,
+      omittedAmount,
+      isOmittedActive,
+      effectiveInHandCash
     });
   } catch (err) {
     console.error("Error fetching cash denominations:", err);
@@ -292,7 +298,7 @@ router.get('/cash-denominations', verifyToken, async (req, res) => {
 // PUT update current user's cash denominations (notes & coins)
 router.put('/cash-denominations', verifyToken, async (req, res) => {
   try {
-    const { notes = {}, coins = {} } = req.body;
+    const { notes = {}, coins = {}, omittedAmount = 0, isOmittedActive } = req.body;
 
     const cleanNotes = {
       n500: Math.max(0, parseInt(notes.n500, 10) || 0),
@@ -311,12 +317,17 @@ router.put('/cash-denominations', verifyToken, async (req, res) => {
       c1: Math.max(0, parseInt(coins.c1, 10) || 0),
     };
 
+    const cleanOmitted = Math.max(0, parseInt(omittedAmount, 10) || 0);
+    const cleanIsOmittedActive = isOmittedActive !== undefined ? Boolean(isOmittedActive) : (cleanOmitted > 0);
+
     const user = await User.findByIdAndUpdate(
       req.userId,
       {
         cashDenominations: {
           notes: cleanNotes,
-          coins: cleanCoins
+          coins: cleanCoins,
+          omittedAmount: cleanOmitted,
+          isOmittedActive: cleanIsOmittedActive,
         }
       },
       { new: true }
@@ -342,13 +353,17 @@ router.put('/cash-denominations', verifyToken, async (req, res) => {
       cleanCoins.c1 * 1;
 
     const totalInHandCash = totalNotes + totalCoins;
+    const effectiveInHandCash = cleanIsOmittedActive ? Math.max(0, totalInHandCash - cleanOmitted) : totalInHandCash;
 
     res.status(200).json({
       message: "Cash denominations updated successfully",
       denominations: user.cashDenominations,
       totalNotes,
       totalCoins,
-      totalInHandCash
+      totalInHandCash,
+      omittedAmount: cleanOmitted,
+      isOmittedActive: cleanIsOmittedActive,
+      effectiveInHandCash
     });
   } catch (err) {
     console.error("Error updating cash denominations:", err);

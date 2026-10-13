@@ -8,8 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,8 +18,22 @@ import { AmountInput } from '../common/AmountInput';
 import { FormInput } from '../common/FormInput';
 import { PrimaryButton } from '../common/PrimaryButton';
 import { CategoryPicker } from './CategoryPicker';
+import { CashDenominationSelector } from '../cash/CashDenominationSelector';
+import { CalculationOptionsCard } from './CalculationOptionsCard';
 import { toISODateOnly } from '../../utils/date';
-import { PaymentMode } from '../../types';
+import {
+  cashService,
+  defaultNotes,
+  defaultCoins,
+  applyCashTransactionToDenominations,
+  autoSelectDenominationsForAmount,
+  calculateCashTotal,
+} from '../../services/cashService';
+import {
+  PaymentMode,
+  CashDenominationNotes,
+  CashDenominationCoins,
+} from '../../types';
 
 interface QuickTransactionModalProps {
   visible: boolean;
@@ -33,6 +45,8 @@ interface QuickTransactionModalProps {
     description: string;
     date: string;
     paymentMode?: PaymentMode;
+    excludeFromTotal?: boolean;
+    omittedAmount?: number;
   }) => Promise<boolean>;
   onAddExpense: (data: {
     title: string;
@@ -41,6 +55,8 @@ interface QuickTransactionModalProps {
     description: string;
     date: string;
     paymentMode?: PaymentMode;
+    excludeFromTotal?: boolean;
+    omittedAmount?: number;
   }) => Promise<boolean>;
 }
 
@@ -59,9 +75,31 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cash Denomination Tracking
+  const [selectedNotes, setSelectedNotes] = useState<Partial<CashDenominationNotes>>({});
+  const [selectedCoins, setSelectedCoins] = useState<Partial<CashDenominationCoins>>({});
+  const [shouldUpdateDenominations, setShouldUpdateDenominations] = useState<boolean>(true);
+
+  // Calculation Options (Omit Amount)
+  const [excludeFromTotal, setExcludeFromTotal] = useState<boolean>(false);
+  const [omittedAmount, setOmittedAmount] = useState<string>('');
+
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
     setCategory(newType === 'income' ? 'salary' : 'groceries');
+    setSelectedNotes({});
+    setSelectedCoins({});
+    setError(null);
+  };
+
+  const handleResetForm = () => {
+    setAmount('');
+    setTitle('');
+    setDescription('');
+    setSelectedNotes({});
+    setSelectedCoins({});
+    setExcludeFromTotal(false);
+    setOmittedAmount('');
     setError(null);
   };
 
@@ -78,13 +116,21 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
     }
 
     setIsSubmitting(true);
+    const parsedOmitted = parseFloat(omittedAmount) || 0;
+
     const payload = {
       title: title.trim(),
       amount: parsedAmount,
       category: category || (type === 'income' ? 'salary' : 'other'),
-      description: description.trim() || `${type === 'income' ? 'Income' : 'Expense'} record (${paymentMode === 'cash' ? 'Cash' : 'Online'})`,
+      description:
+        description.trim() ||
+        `${type === 'income' ? 'Income' : 'Expense'} record (${
+          paymentMode === 'cash' ? 'Cash' : 'Online'
+        })`,
       date: toISODateOnly(),
       paymentMode,
+      excludeFromTotal,
+      omittedAmount: parsedOmitted,
     };
 
     let success = false;
@@ -94,13 +140,52 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
       success = await onAddExpense(payload);
     }
 
+    // If transaction succeeded and user paid in cash with denomination updates enabled
+    if (success && paymentMode === 'cash' && shouldUpdateDenominations) {
+      try {
+        const cashResp = await cashService.getCashDenominations();
+        const currentNotes = cashResp?.denominations?.notes || defaultNotes;
+        const currentCoins = cashResp?.denominations?.coins || defaultCoins;
+
+        // Check if user specifically selected notes/coins
+        const selectedTotal = calculateCashTotal(selectedNotes, selectedCoins).totalCash;
+        let deltaNotes = selectedNotes;
+        let deltaCoins = selectedCoins;
+
+        // If no individual notes selected, auto-allocate to match the typed amount
+        if (selectedTotal <= 0 && parsedAmount > 0) {
+          const autoAllocated = autoSelectDenominationsForAmount(
+            currentNotes,
+            currentCoins,
+            parsedAmount
+          );
+          deltaNotes = autoAllocated.notes;
+          deltaCoins = autoAllocated.coins;
+        }
+
+        const updated = applyCashTransactionToDenominations(
+          currentNotes,
+          currentCoins,
+          deltaNotes,
+          deltaCoins,
+          type
+        );
+
+        await cashService.updateCashDenominations(
+          updated.notes,
+          updated.coins,
+          cashResp?.omittedAmount,
+          cashResp?.isOmittedActive
+        );
+      } catch (denomErr) {
+        console.warn('Failed to update cash denominations automatically:', denomErr);
+      }
+    }
+
     setIsSubmitting(false);
 
     if (success) {
-      // Reset fields and close
-      setAmount('');
-      setTitle('');
-      setDescription('');
+      handleResetForm();
       onClose();
     } else {
       Alert.alert('Error', `Failed to save ${type}. Please check your connection.`);
@@ -109,171 +194,210 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.backdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.keyboardContainer}
-          >
-            <View style={styles.sheet}>
-              {/* Header */}
-              <View style={styles.header}>
+      <View style={styles.backdrop}>
+        {/* Backdrop touchable to dismiss outside the sheet */}
+        <TouchableOpacity
+          style={styles.backdropDismiss}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardContainer}
+        >
+          <View style={styles.sheet}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
                 <Text style={styles.headerTitle}>Add Transaction</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                <Text style={styles.headerSubtitle}>Record quick cash or online entry</Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Form Body */}
+            <ScrollView
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+              bounces={true}
+            >
+              {/* Income / Expense Segmented Control */}
+              <View style={styles.segmentContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.segmentButton,
+                    type === 'income' && styles.segmentActiveIncome,
+                  ]}
+                  onPress={() => handleTypeChange('income')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="arrow-up-circle"
+                    size={18}
+                    color={type === 'income' ? colors.income : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      type === 'income' && { color: colors.income, fontWeight: '700' },
+                    ]}
+                  >
+                    Income
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.segmentButton,
+                    type === 'expense' && styles.segmentActiveExpense,
+                  ]}
+                  onPress={() => handleTypeChange('expense')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="arrow-down-circle"
+                    size={18}
+                    color={type === 'expense' ? colors.expense : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      type === 'expense' && { color: colors.expense, fontWeight: '700' },
+                    ]}
+                  >
+                    Expense
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Segmented Control */}
-                <View style={styles.segmentContainer}>
-                  <TouchableOpacity
+              {/* Payment Mode Selector: In Account vs In Hand */}
+              <View style={styles.paymentModeRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.paymentModeBtn,
+                    paymentMode === 'online' && styles.paymentModeBtnActiveOnline,
+                  ]}
+                  onPress={() => setPaymentMode('online')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="card-outline"
+                    size={15}
+                    color={paymentMode === 'online' ? colors.primary : colors.textSecondary}
+                  />
+                  <Text
                     style={[
-                      styles.segmentButton,
-                      type === 'income' && styles.segmentActiveIncome,
+                      styles.paymentModeText,
+                      paymentMode === 'online' && styles.paymentModeTextActiveOnline,
                     ]}
-                    onPress={() => handleTypeChange('income')}
-                    activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name="arrow-up-circle"
-                      size={18}
-                      color={type === 'income' ? colors.income : colors.textMuted}
-                    />
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        type === 'income' && { color: colors.income, fontWeight: '700' },
-                      ]}
-                    >
-                      Income
-                    </Text>
-                  </TouchableOpacity>
+                    In Account (Bank/UPI)
+                  </Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
+                <TouchableOpacity
+                  style={[
+                    styles.paymentModeBtn,
+                    paymentMode === 'cash' && styles.paymentModeBtnActiveCash,
+                  ]}
+                  onPress={() => setPaymentMode('cash')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="cash-outline"
+                    size={15}
+                    color={paymentMode === 'cash' ? '#059669' : colors.textSecondary}
+                  />
+                  <Text
                     style={[
-                      styles.segmentButton,
-                      type === 'expense' && styles.segmentActiveExpense,
+                      styles.paymentModeText,
+                      paymentMode === 'cash' && styles.paymentModeTextActiveCash,
                     ]}
-                    onPress={() => handleTypeChange('expense')}
-                    activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name="arrow-down-circle"
-                      size={18}
-                      color={type === 'expense' ? colors.expense : colors.textMuted}
-                    />
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        type === 'expense' && { color: colors.expense, fontWeight: '700' },
-                      ]}
-                    >
-                      Expense
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                    In Hand (Cash)
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-                {/* Payment Mode Selector: In Account vs In Hand */}
-                <View style={styles.paymentModeRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.paymentModeBtn,
-                      paymentMode === 'online' && styles.paymentModeBtnActiveOnline,
-                    ]}
-                    onPress={() => setPaymentMode('online')}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons
-                      name="card-outline"
-                      size={15}
-                      color={paymentMode === 'online' ? colors.primary : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.paymentModeText,
-                        paymentMode === 'online' && styles.paymentModeTextActiveOnline,
-                      ]}
-                    >
-                      In Account (Bank/UPI)
-                    </Text>
-                  </TouchableOpacity>
+              {/* Amount Input */}
+              <AmountInput
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+              />
 
-                  <TouchableOpacity
-                    style={[
-                      styles.paymentModeBtn,
-                      paymentMode === 'cash' && styles.paymentModeBtnActiveCash,
-                    ]}
-                    onPress={() => setPaymentMode('cash')}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons
-                      name="cash-outline"
-                      size={15}
-                      color={paymentMode === 'cash' ? '#059669' : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.paymentModeText,
-                        paymentMode === 'cash' && styles.paymentModeTextActiveCash,
-                      ]}
-                    >
-                      In Hand (Cash)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Amount Input */}
-                <AmountInput
-                  value={amount}
-                  onChangeText={setAmount}
-                  placeholder="0.00"
-                />
-
-                {/* Title Input */}
-                <FormInput
-                  label="TITLE / DESCRIPTION"
-                  placeholder={type === 'income' ? 'e.g. Monthly Salary' : 'e.g. Grocery Shopping'}
-                  value={title}
-                  onChangeText={setTitle}
-                  leftIcon="pencil-outline"
-                />
-
-                {/* Category Picker */}
-                <CategoryPicker
+              {/* Cash Denomination Selector (Shown when In-Hand Cash is selected) */}
+              {paymentMode === 'cash' && (
+                <CashDenominationSelector
                   type={type}
-                  selectedCategory={category}
-                  onSelectCategory={setCategory}
+                  selectedNotes={selectedNotes}
+                  onChangeSelectedNotes={setSelectedNotes}
+                  selectedCoins={selectedCoins}
+                  onChangeSelectedCoins={setSelectedCoins}
+                  shouldUpdateDenominations={shouldUpdateDenominations}
+                  onToggleUpdateDenominations={setShouldUpdateDenominations}
+                  currentAmount={parseFloat(amount) || 0}
+                  onSyncAmountWithCash={(newTotal) => setAmount(String(newTotal))}
                 />
+              )}
 
-                {/* Optional Note */}
-                <FormInput
-                  label="NOTES (OPTIONAL)"
-                  placeholder="Add any extra details"
-                  value={description}
-                  onChangeText={setDescription}
-                  leftIcon="document-text-outline"
-                />
+              {/* Title Input */}
+              <FormInput
+                label="TITLE / DESCRIPTION"
+                placeholder={type === 'income' ? 'e.g. Monthly Salary' : 'e.g. Grocery Shopping'}
+                value={title}
+                onChangeText={setTitle}
+                leftIcon="pencil-outline"
+              />
 
-                {error && <Text style={styles.errorText}>{error}</Text>}
+              {/* Category Picker */}
+              <CategoryPicker
+                type={type}
+                selectedCategory={category}
+                onSelectCategory={setCategory}
+              />
 
-                {/* Submit Button */}
-                <PrimaryButton
-                  title={type === 'income' ? 'Add Income Record' : 'Add Expense Record'}
-                  variant={type === 'income' ? 'income' : 'expense'}
-                  onPress={handleSubmit}
-                  isLoading={isSubmitting}
-                  style={styles.submitBtn}
-                />
-              </ScrollView>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </TouchableWithoutFeedback>
+              {/* Calculation Options (Omit Amount / Exclude from Total) */}
+              <CalculationOptionsCard
+                excludeFromTotal={excludeFromTotal}
+                onToggleExcludeFromTotal={setExcludeFromTotal}
+                omittedAmount={omittedAmount}
+                onChangeOmittedAmount={setOmittedAmount}
+                totalAmount={parseFloat(amount) || 0}
+              />
+
+              {/* Optional Notes */}
+              <FormInput
+                label="NOTES (OPTIONAL)"
+                placeholder="Add any extra notes or reference"
+                value={description}
+                onChangeText={setDescription}
+                leftIcon="document-text-outline"
+              />
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
+              {/* Submit Button */}
+              <PrimaryButton
+                title={type === 'income' ? 'Add Income Record' : 'Add Expense Record'}
+                variant={type === 'income' ? 'income' : 'expense'}
+                onPress={handleSubmit}
+                isLoading={isSubmitting}
+                style={styles.submitBtn}
+              />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -281,8 +405,15 @@ export const QuickTransactionModal: React.FC<QuickTransactionModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(23, 23, 56, 0.55)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'flex-end',
+  },
+  backdropDismiss: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   keyboardContainer: {
     width: '100%',
@@ -294,7 +425,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingBottom: Platform.OS === 'ios' ? 36 : spacing.lg,
-    maxHeight: '85%',
+    maxHeight: '92%',
+    flexShrink: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -306,11 +440,22 @@ const styles = StyleSheet.create({
     ...typography.h2,
     color: colors.primary,
   },
+  headerSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   closeButton: {
-    padding: spacing.xs,
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceVariant,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
-    paddingBottom: spacing.lg,
+    paddingBottom: 60,
+    flexGrow: 1,
   },
   segmentContainer: {
     flexDirection: 'row',

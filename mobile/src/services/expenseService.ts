@@ -8,6 +8,8 @@ export interface CreateExpenseData {
   description: string;
   date: string;
   paymentMode?: PaymentMode;
+  excludeFromTotal?: boolean;
+  omittedAmount?: number;
 }
 
 export const expenseService = {

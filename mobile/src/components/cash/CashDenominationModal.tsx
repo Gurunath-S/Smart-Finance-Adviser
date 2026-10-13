@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -111,6 +112,10 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  // Omit / Reserve Cash from Total calculation
+  const [omittedInput, setOmittedInput] = useState<string>('');
+  const [isOmittedActive, setIsOmittedActive] = useState<boolean>(false);
+
   useEffect(() => {
     if (visible) {
       loadDenominations();
@@ -125,6 +130,12 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
         setNotes({ ...defaultNotes, ...(data.denominations.notes || {}) });
         setCoins({ ...defaultCoins, ...(data.denominations.coins || {}) });
       }
+      if (data?.omittedAmount !== undefined) {
+        setOmittedInput(data.omittedAmount > 0 ? String(data.omittedAmount) : '');
+      }
+      if (data?.isOmittedActive !== undefined) {
+        setIsOmittedActive(Boolean(data.isOmittedActive));
+      }
     } catch {
       // Use existing state or defaults gracefully
     } finally {
@@ -133,6 +144,11 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
   };
 
   const totals = useMemo(() => calculateCashTotal(notes, coins), [notes, coins]);
+
+  const parsedOmitted = parseFloat(omittedInput) || 0;
+  const countedInTotal = isOmittedActive
+    ? Math.max(0, totals.totalCash - parsedOmitted)
+    : totals.totalCash;
 
   const updateNote = (key: keyof CashDenominationNotes, delta: number) => {
     setNotes((prev) => ({
@@ -171,6 +187,8 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
         onPress: () => {
           setNotes(defaultNotes);
           setCoins(defaultCoins);
+          setOmittedInput('');
+          setIsOmittedActive(false);
         },
       },
     ]);
@@ -179,9 +197,25 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const result = await cashService.updateCashDenominations(notes, coins);
-      onSaved?.(result.totalInHandCash);
-      Alert.alert('Saved!', `In-Hand Cash updated to ${formatCurrency(result.totalInHandCash)}.`);
+      const cleanOmitted = Math.max(0, parseFloat(omittedInput) || 0);
+      const result = await cashService.updateCashDenominations(
+        notes,
+        coins,
+        cleanOmitted,
+        isOmittedActive
+      );
+      const effectiveCash = isOmittedActive
+        ? Math.max(0, result.totalInHandCash - cleanOmitted)
+        : result.totalInHandCash;
+      onSaved?.(effectiveCash);
+      Alert.alert(
+        'Saved!',
+        `In-Hand Cash updated to ${formatCurrency(result.totalInHandCash)}${
+          isOmittedActive && cleanOmitted > 0
+            ? ` (${formatCurrency(cleanOmitted)} reserved/omitted from total calculation)`
+            : ''
+        }.`
+      );
       onClose();
     } catch {
       Alert.alert('Error', 'Failed to save cash denominations. Please check your connection.');
@@ -208,8 +242,18 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
           {/* Grand Total Hero Card */}
           <View style={styles.heroCard}>
             <View>
-              <Text style={styles.heroLabel}>TOTAL IN-HAND CASH</Text>
+              <Text style={styles.heroLabel}>TOTAL PHYSICAL CASH</Text>
               <Text style={styles.heroAmount}>{formatCurrency(totals.totalCash)}</Text>
+              {isOmittedActive && parsedOmitted > 0 && (
+                <View style={styles.heroEffectiveBox}>
+                  <Text style={styles.heroEffectiveText}>
+                    Counted in Total: <Text style={{ fontWeight: '800', color: '#6EE7B7' }}>{formatCurrency(countedInTotal)}</Text>
+                  </Text>
+                  <Text style={styles.heroOmittedSub}>
+                    ({formatCurrency(parsedOmitted)} omitted / reserved)
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.heroBreakdown}>
               <View style={styles.heroPill}>
@@ -246,6 +290,70 @@ export const CashDenominationModal: React.FC<CashDenominationModalProps> = ({
             </View>
           ) : (
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollList}>
+              {/* Omit / Reserve Cash from Total Calculation Card */}
+              <View style={styles.omitCard}>
+                <View style={styles.omitHeader}>
+                  <View style={styles.omitTitleRow}>
+                    <View style={styles.omitIcon}>
+                      <Ionicons name="lock-closed" size={14} color="#059669" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.omitTitle}>Reserve / Omit Cash from Total</Text>
+                      <Text style={styles.omitSubtitle}>
+                        Exclude emergency/set-aside cash from Total Wealth
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={isOmittedActive}
+                    onValueChange={setIsOmittedActive}
+                    trackColor={{ false: colors.border, true: '#34D399' }}
+                    thumbColor={isOmittedActive ? '#059669' : '#f4f3f4'}
+                  />
+                </View>
+
+                {isOmittedActive && (
+                  <View style={styles.omitInputArea}>
+                    <Text style={styles.omitInputLabel}>AMOUNT TO OMIT / RESERVE (₹):</Text>
+                    <View style={styles.omitInputRow}>
+                      <Text style={styles.omitCurrency}>₹</Text>
+                      <TextInput
+                        style={styles.omitTextInput}
+                        keyboardType="decimal-pad"
+                        placeholder="0"
+                        placeholderTextColor={colors.textMuted}
+                        value={omittedInput}
+                        onChangeText={(txt) => setOmittedInput(txt.replace(/[^0-9.]/g, ''))}
+                      />
+                      {parsedOmitted > 0 && (
+                        <TouchableOpacity onPress={() => setOmittedInput('')} style={{ padding: 4 }}>
+                          <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* Quick Presets */}
+                    <View style={styles.presetsRow}>
+                      {[500, 1000, 2000, 5000].map((preset) => (
+                        <TouchableOpacity
+                          key={preset}
+                          style={styles.presetChip}
+                          onPress={() => setOmittedInput(String(preset))}
+                        >
+                          <Text style={styles.presetChipText}>₹{preset}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    <Text style={styles.omitExplanation}>
+                      {parsedOmitted > 0
+                        ? `₹${parsedOmitted.toLocaleString()} will be omitted from your total calculated wealth.`
+                        : 'Enter an amount or choose a preset.'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
               {/* Notes Section */}
               {(activeTab === 'all' || activeTab === 'notes') && (
                 <View style={styles.section}>
@@ -617,5 +725,117 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.white,
+  },
+  heroEffectiveBox: {
+    marginTop: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.sm,
+  },
+  heroEffectiveText: {
+    fontSize: 11,
+    color: '#E2E8F0',
+    fontWeight: '600',
+  },
+  heroOmittedSub: {
+    fontSize: 9,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  omitCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  omitHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  omitTitleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: spacing.sm,
+  },
+  omitIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    backgroundColor: 'rgba(5, 150, 105, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  omitTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  omitSubtitle: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  omitInputArea: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  omitInputLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  omitInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: radii.md,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  omitCurrency: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginRight: 4,
+  },
+  omitTextInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    padding: 0,
+  },
+  presetsRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  presetChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: '#E2E8F0',
+  },
+  presetChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  omitExplanation: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 });

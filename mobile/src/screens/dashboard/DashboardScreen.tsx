@@ -114,6 +114,9 @@ export const DashboardScreen: React.FC = () => {
           balance={summary.currentBalance}
           inAccountBalance={summary.inAccountBalance}
           inHandBalance={summary.inHandBalance}
+          omittedCash={summary.omittedCash}
+          totalPhysicalCash={summary.totalPhysicalCash}
+          omittedTransactionsCount={summary.omittedTransactionsCount}
           income={summary.totalIncome}
           expenses={summary.totalExpenses}
           onAddIncome={() => setModalVisible(true)}

@@ -130,6 +130,26 @@ export const TransactionItem = React.memo<TransactionItemProps>(({
               {transaction.paymentMode === 'cash' ? 'Cash' : 'Online'}
             </Text>
           </View>
+          {transaction.excludeFromTotal && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <View style={styles.omittedTag}>
+                <Ionicons name="eye-off-outline" size={10} color="#F43F5E" />
+                <Text style={styles.omittedTagText}>Omitted</Text>
+              </View>
+            </>
+          )}
+          {!!transaction.omittedAmount && transaction.omittedAmount > 0 && !transaction.excludeFromTotal && (
+            <>
+              <Text style={styles.dot}>•</Text>
+              <View style={[styles.omittedTag, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+                <Ionicons name="eye-off-outline" size={10} color="#D97706" />
+                <Text style={[styles.omittedTagText, { color: '#D97706' }]}>
+                  {formatCurrency(transaction.omittedAmount)} omitted
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </View>
 
@@ -239,5 +259,19 @@ const styles = StyleSheet.create({
   },
   modeTagTextOnline: {
     color: colors.primary,
+  },
+  omittedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: radii.full,
+    gap: 3,
+  },
+  omittedTagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#F43F5E',
   },
 });

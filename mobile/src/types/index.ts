@@ -60,6 +60,8 @@ export interface CashDenominationCoins {
 export interface CashDenominations {
   notes: CashDenominationNotes;
   coins: CashDenominationCoins;
+  omittedAmount?: number;
+  isOmittedActive?: boolean;
 }
 
 export interface Income {
@@ -72,6 +74,8 @@ export interface Income {
   description: string;
   userId: string;
   paymentMode?: PaymentMode;
+  excludeFromTotal?: boolean;
+  omittedAmount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -86,6 +90,8 @@ export interface Expense {
   description: string;
   userId: string;
   paymentMode?: PaymentMode;
+  excludeFromTotal?: boolean;
+  omittedAmount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -100,6 +106,8 @@ export interface UnifiedTransaction {
   description: string;
   userId: string;
   paymentMode?: PaymentMode;
+  excludeFromTotal?: boolean;
+  omittedAmount?: number;
 }
 
 export interface SuggestionHistoryItem {

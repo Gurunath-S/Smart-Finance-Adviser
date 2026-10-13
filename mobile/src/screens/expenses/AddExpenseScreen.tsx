@@ -16,13 +16,27 @@ import { useTransactions } from '../../hooks/useTransactions';
 import { AmountInput } from '../../components/common/AmountInput';
 import { FormInput } from '../../components/common/FormInput';
 import { CategoryPicker } from '../../components/forms/CategoryPicker';
+import { CashDenominationSelector } from '../../components/cash/CashDenominationSelector';
+import { CalculationOptionsCard } from '../../components/forms/CalculationOptionsCard';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 import { toISODateOnly } from '../../utils/date';
 import { Ionicons } from '@expo/vector-icons';
-import { PaymentMode } from '../../types';
+import {
+  cashService,
+  defaultNotes,
+  defaultCoins,
+  applyCashTransactionToDenominations,
+  autoSelectDenominationsForAmount,
+  calculateCashTotal,
+} from '../../services/cashService';
+import {
+  PaymentMode,
+  CashDenominationNotes,
+  CashDenominationCoins,
+} from '../../types';
 
 type AddExpenseNavigationProp = NativeStackNavigationProp<AppStackParamList, 'AddExpense'>;
 
@@ -40,6 +54,15 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cash Denomination state
+  const [selectedNotes, setSelectedNotes] = useState<Partial<CashDenominationNotes>>({});
+  const [selectedCoins, setSelectedCoins] = useState<Partial<CashDenominationCoins>>({});
+  const [shouldUpdateDenominations, setShouldUpdateDenominations] = useState<boolean>(true);
+
+  // Calculation Options (Omit Amount)
+  const [excludeFromTotal, setExcludeFromTotal] = useState<boolean>(false);
+  const [omittedAmount, setOmittedAmount] = useState<string>('');
+
   const handleSubmit = async () => {
     setError(null);
     const parsedAmount = parseFloat(amount);
@@ -53,6 +76,8 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
     }
 
     setIsSubmitting(true);
+    const parsedOmitted = parseFloat(omittedAmount) || 0;
+
     const success = await addExpense({
       title: title.trim(),
       amount: parsedAmount,
@@ -60,7 +85,49 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
       description: description.trim() || 'Expense record',
       date: toISODateOnly(),
       paymentMode,
+      excludeFromTotal,
+      omittedAmount: parsedOmitted,
     });
+
+    if (success && paymentMode === 'cash' && shouldUpdateDenominations) {
+      try {
+        const cashResp = await cashService.getCashDenominations();
+        const currentNotes = cashResp?.denominations?.notes || defaultNotes;
+        const currentCoins = cashResp?.denominations?.coins || defaultCoins;
+
+        const selectedTotal = calculateCashTotal(selectedNotes, selectedCoins).totalCash;
+        let deltaNotes = selectedNotes;
+        let deltaCoins = selectedCoins;
+
+        if (selectedTotal <= 0 && parsedAmount > 0) {
+          const autoAllocated = autoSelectDenominationsForAmount(
+            currentNotes,
+            currentCoins,
+            parsedAmount
+          );
+          deltaNotes = autoAllocated.notes;
+          deltaCoins = autoAllocated.coins;
+        }
+
+        const updated = applyCashTransactionToDenominations(
+          currentNotes,
+          currentCoins,
+          deltaNotes,
+          deltaCoins,
+          'expense'
+        );
+
+        await cashService.updateCashDenominations(
+          updated.notes,
+          updated.coins,
+          cashResp?.omittedAmount,
+          cashResp?.isOmittedActive
+        );
+      } catch (denomErr) {
+        console.warn('Failed to update cash denominations automatically:', denomErr);
+      }
+    }
+
     setIsSubmitting(false);
 
     if (success) {
@@ -78,8 +145,10 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
           keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+          bounces={true}
         >
           {/* Header */}
           <View style={styles.header}>
@@ -90,7 +159,10 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
             >
               <Ionicons name="arrow-back" size={24} color={colors.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add New Expense</Text>
+            <View>
+              <Text style={styles.headerTitle}>Add New Expense</Text>
+              <Text style={styles.headerSubtitle}>Record your spending</Text>
+            </View>
           </View>
 
           {/* Payment Mode Selector */}
@@ -149,6 +221,21 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
             placeholder="0.00"
           />
 
+          {/* Cash Denominations (Notes & Coins) Selector */}
+          {paymentMode === 'cash' && (
+            <CashDenominationSelector
+              type="expense"
+              selectedNotes={selectedNotes}
+              onChangeSelectedNotes={setSelectedNotes}
+              selectedCoins={selectedCoins}
+              onChangeSelectedCoins={setSelectedCoins}
+              shouldUpdateDenominations={shouldUpdateDenominations}
+              onToggleUpdateDenominations={setShouldUpdateDenominations}
+              currentAmount={parseFloat(amount) || 0}
+              onSyncAmountWithCash={(newTotal) => setAmount(String(newTotal))}
+            />
+          )}
+
           {/* Title Input */}
           <FormInput
             label="EXPENSE TITLE"
@@ -163,6 +250,15 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
             type="expense"
             selectedCategory={category}
             onSelectCategory={setCategory}
+          />
+
+          {/* Calculation Options (Omit Amount / Exclude from Total) */}
+          <CalculationOptionsCard
+            excludeFromTotal={excludeFromTotal}
+            onToggleExcludeFromTotal={setExcludeFromTotal}
+            omittedAmount={omittedAmount}
+            onChangeOmittedAmount={setOmittedAmount}
+            totalAmount={parseFloat(amount) || 0}
           />
 
           {/* Notes Input */}
@@ -200,6 +296,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
+    paddingBottom: 80,
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -220,6 +318,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     ...typography.h2,
     color: colors.primary,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   errorText: {
     ...typography.caption,

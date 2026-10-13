@@ -32,6 +32,8 @@ const UserSchema = new mongoose.Schema(
         c2: { type: Number, default: 0 },
         c1: { type: Number, default: 0 },
       },
+      omittedAmount: { type: Number, default: 0 },
+      isOmittedActive: { type: Boolean, default: false },
     },
   },
   { timestamps: true }

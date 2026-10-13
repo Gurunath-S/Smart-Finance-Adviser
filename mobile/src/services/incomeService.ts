@@ -8,6 +8,8 @@ export interface CreateIncomeData {
   description: string;
   date: string;
   paymentMode?: PaymentMode;
+  excludeFromTotal?: boolean;
+  omittedAmount?: number;
 }
 
 export const incomeService = {

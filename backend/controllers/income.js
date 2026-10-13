@@ -2,7 +2,7 @@ const IncomeSchema = require("../models/IncomeModel");
 const { parseMonetaryAmount } = require("../utils/currency");
 
 exports.addIncome = async (req, res) => {
-    const { title, amount, category, description, date, paymentMode } = req.body;
+    const { title, amount, category, description, date, paymentMode, excludeFromTotal, omittedAmount } = req.body;
     const userId = req.userId;
 
     if (!title || !category || !description || !date) {
@@ -22,7 +22,9 @@ exports.addIncome = async (req, res) => {
             description,
             date,
             userId,
-            paymentMode: paymentMode === 'cash' ? 'cash' : 'online'
+            paymentMode: paymentMode === 'cash' ? 'cash' : 'online',
+            excludeFromTotal: Boolean(excludeFromTotal),
+            omittedAmount: Math.max(0, Number(omittedAmount) || 0)
         });
         await income.save();
         res.status(200).json({ message: 'Income Added', income });

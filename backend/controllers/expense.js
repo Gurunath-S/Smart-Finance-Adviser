@@ -2,7 +2,7 @@ const ExpenseSchema = require("../models/ExpenseModel");
 const { parseMonetaryAmount } = require("../utils/currency");
 
 exports.addExpense = async (req, res) => {
-    const { title, amount, category, description, date, paymentMode } = req.body;
+    const { title, amount, category, description, date, paymentMode, excludeFromTotal, omittedAmount } = req.body;
     const userId = req.userId;
 
     const { valid, amount: parsedAmount, error } = parseMonetaryAmount(amount);
@@ -21,7 +21,9 @@ exports.addExpense = async (req, res) => {
             description,
             date,
             userId,
-            paymentMode: paymentMode === 'cash' ? 'cash' : 'online'
+            paymentMode: paymentMode === 'cash' ? 'cash' : 'online',
+            excludeFromTotal: Boolean(excludeFromTotal),
+            omittedAmount: Math.max(0, Number(omittedAmount) || 0)
         });
         await expense.save();
         res.status(200).json({ message: 'Expense Added', expense });

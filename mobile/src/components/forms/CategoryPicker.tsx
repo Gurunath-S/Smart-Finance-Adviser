@@ -55,6 +55,8 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        nestedScrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
       >
         {categories.map((cat) => {
           const isSelected = selectedCategory.toLowerCase() === cat.key.toLowerCase();

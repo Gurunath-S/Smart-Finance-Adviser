@@ -25,8 +25,10 @@ import { theme } from '../../theme/theme';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
 import { CashDenominationModal } from '../../components/cash/CashDenominationModal';
+import { useTransactions } from '../../hooks/useTransactions';
 
 export const ProfileScreen: React.FC = () => {
+  const { refresh } = useTransactions();
   const {
     user,
     logout,
@@ -456,6 +458,7 @@ export const ProfileScreen: React.FC = () => {
       <CashDenominationModal
         visible={isCashModalVisible}
         onClose={() => setIsCashModalVisible(false)}
+        onSaved={() => refresh()}
       />
     </SafeAreaView>
   );

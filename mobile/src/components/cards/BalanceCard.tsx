@@ -11,6 +11,9 @@ interface BalanceCardProps {
   balance: number;
   inAccountBalance?: number;
   inHandBalance?: number;
+  omittedCash?: number;
+  totalPhysicalCash?: number;
+  omittedTransactionsCount?: number;
   income: number;
   expenses: number;
   onAddIncome?: () => void;
@@ -23,6 +26,9 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   balance,
   inAccountBalance = 0,
   inHandBalance = 0,
+  omittedCash = 0,
+  totalPhysicalCash = inHandBalance,
+  omittedTransactionsCount = 0,
   income,
   expenses,
   onAddIncome,
@@ -35,9 +41,23 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       {/* Balance Header */}
       <View style={styles.header}>
         <Text style={styles.label}>TOTAL WEALTH</Text>
-        <View style={styles.chip}>
-          <Ionicons name="wallet" size={14} color={colors.accentPink} />
-          <Text style={styles.chipText}>Live</Text>
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          {(omittedCash > 0 || omittedTransactionsCount > 0) && (
+            <TouchableOpacity
+              style={styles.omittedTag}
+              onPress={onOpenCashManager}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="lock-closed" size={11} color="#FBBF24" />
+              <Text style={styles.omittedTagText}>
+                {omittedCash > 0 ? `${formatCurrency(omittedCash)} Reserved` : 'Omitted active'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <View style={styles.chip}>
+            <Ionicons name="wallet" size={14} color={colors.accentPink} />
+            <Text style={styles.chipText}>Live</Text>
+          </View>
         </View>
       </View>
 
@@ -76,7 +96,11 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           <Text style={[styles.splitAmount, { color: '#34D399' }]}>
             {formatCurrency(inHandBalance)}
           </Text>
-          <Text style={styles.splitSub}>Physical Cash ➔</Text>
+          <Text style={styles.splitSub}>
+            {omittedCash > 0
+              ? `${formatCurrency(omittedCash)} reserved ➔`
+              : 'Physical Cash ➔'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -137,6 +161,22 @@ const styles = StyleSheet.create({
     ...typography.captionBold,
     color: 'rgba(255, 255, 255, 0.65)',
     letterSpacing: 1.2,
+  },
+  omittedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(251, 191, 36, 0.18)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radii.full,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.35)',
+  },
+  omittedTagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FBBF24',
   },
   chip: {
     flexDirection: 'row',
