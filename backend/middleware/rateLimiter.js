@@ -71,7 +71,23 @@ const authRateLimiter = createRateLimiter({
   message: 'Too many authentication attempts. Please try again after 15 minutes.'
 });
 
+// Rate limiter for outbound email endpoints (prevents SMTP spam)
+const emailRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 5,
+  message: 'Email rate limit reached. Please wait 15 minutes before sending another email.'
+});
+
+// Rate limiter for AI advisory calculations
+const aiRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 15,
+  message: 'Advisory calculation rate limit exceeded. Please wait a minute.'
+});
+
 module.exports = {
   createRateLimiter,
-  authRateLimiter
+  authRateLimiter,
+  emailRateLimiter,
+  aiRateLimiter,
 };

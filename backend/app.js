@@ -1,5 +1,7 @@
-const express = require('express')
+const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
 const { db } = require('./db/db');
 const cookieParser = require('cookie-parser');
 const app = express();
@@ -14,7 +16,7 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
 
-// Allow local dev origins + Vercel origins + custom CLIENT_URL
+// Explicitly allowed client origins
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -26,32 +28,28 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (mobile apps, Postman, server-to-server)
+    // Allow non-browser requests (native mobile apps, Postman, server-to-server)
     if (!origin) return callback(null, true);
     
-    let hostname = '';
-    try {
-      hostname = new URL(origin).hostname;
-    } catch (_e) {
-      hostname = '';
-    }
-
-    const isVercel = hostname.endsWith('.vercel.app') || hostname === 'vercel.app';
     const isExplicitlyAllowed = allowedOrigins.includes(origin);
     const isDev = process.env.NODE_ENV !== 'production';
 
-    if (isExplicitlyAllowed || isVercel || isDev) {
+    if (isExplicitlyAllowed || isDev) {
       return callback(null, true);
     }
-    return callback(null, false);
+    return callback(new Error(`CORS origin ${origin} not permitted`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
 };
 
-//middlewares
-app.use(express.json({ limit: '50mb' }));
+// Middlewares: Security headers, compression, body parsing, cookies, and CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(compression());
+app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));

@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Suggestion = require('../models/Suggestion');
 const verifyToken = require('../middleware/verifyToken');
+const { aiRateLimiter } = require('../middleware/rateLimiter');
 const { getFinancialAdvice } = require('../services/advisoryEngine');
 require('dotenv').config();
 
-// Generate suggestions using Zero-Cost Advisory Engine (protected)
-router.post('/get-suggestions', verifyToken, async (req, res) => {
+// Generate suggestions using Zero-Cost Advisory Engine (protected & rate-limited)
+router.post('/get-suggestions', verifyToken, aiRateLimiter, async (req, res) => {
   try {
     const { balance = 0, income = 0, expenses = 0 } = req.body;
 

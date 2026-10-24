@@ -1,13 +1,14 @@
 const { addExpense, getExpense, deleteExpense } = require('../controllers/expense');
 const { addIncome, getIncomes, deleteIncome } = require('../controllers/income');
-const { fetchTransactions } = require('../controllers/transactionController');
+const { fetchTransactions, fetchFinancialOverview } = require('../controllers/transactionController');
 const router = require('express').Router();
 const verifyToken = require("../middleware/verifyToken");
 
 // Apply verifyToken to all routes in this router
 router.use(verifyToken);
 
-router.post('/add-income', addIncome)
+router.get('/financial-overview', fetchFinancialOverview)
+    .post('/add-income', addIncome)
     .get('/get-incomes', getIncomes)
     .delete('/delete-income/:id', deleteIncome)
     .post('/add-expense', addExpense)

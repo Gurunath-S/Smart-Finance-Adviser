@@ -1,11 +1,12 @@
 const express = require("express");
 const { sendMail } = require("../controllers/mailer");
 const verifyToken = require("../middleware/verifyToken");
+const { emailRateLimiter } = require("../middleware/rateLimiter");
 const User = require("../models/User");
 const router = express.Router();
 
-// Protected — only authenticated users can trigger emails (sent to their registered address)
-router.post("/send-email", verifyToken, async (req, res) => {
+// Protected & Rate-limited — only authenticated users can trigger emails
+router.post("/send-email", verifyToken, emailRateLimiter, async (req, res) => {
   const { subject, text, html } = req.body;
 
   if (!subject || (!text && !html)) {

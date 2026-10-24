@@ -1,3 +1,4 @@
+import { api } from './api';
 import { incomeService } from './incomeService';
 import { expenseService } from './expenseService';
 import { cashService, CashDenominationResponse } from './cashService';
@@ -194,11 +195,31 @@ export const transactionService = {
 
     activeFetchPromise = (async () => {
       try {
-        const [incomes, expenses, cashData] = await Promise.all([
-          incomeService.getIncomes(),
-          expenseService.getExpenses(),
-          cashService.getCashDenominations().catch(() => null),
-        ]);
+        let incomes: Income[];
+        let expenses: Expense[];
+        let cashData: CashDenominationResponse | null = null;
+
+        try {
+          // Attempt unified single-roundtrip endpoint (fastest, saves 2 round-trips)
+          const response = await api.get<{
+            incomes: Income[];
+            expenses: Expense[];
+            cashData?: CashDenominationResponse | null;
+          }>('/v1/financial-overview');
+          incomes = response.data.incomes || [];
+          expenses = response.data.expenses || [];
+          cashData = response.data.cashData || null;
+        } catch {
+          // Fallback to legacy parallel calls if connecting to older backend instance
+          const [legacyIncomes, legacyExpenses, legacyCash] = await Promise.all([
+            incomeService.getIncomes(),
+            expenseService.getExpenses(),
+            cashService.getCashDenominations().catch(() => null),
+          ]);
+          incomes = legacyIncomes;
+          expenses = legacyExpenses;
+          cashData = legacyCash;
+        }
 
         const unifiedTransactions = sortUnifiedTransactions(incomes, expenses);
         const summary = computeFinancialSummary(incomes, expenses, cashData);

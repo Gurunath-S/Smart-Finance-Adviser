@@ -95,8 +95,12 @@ export const GlobalProvider = ({ children }) => {
       return false;
     }
     try {
-      await axios.post(`${V1_URL}add-income`, income, getAuthHeaders());
-      await getIncomes();
+      const response = await axios.post(`${V1_URL}add-income`, income, getAuthHeaders());
+      if (response.data?.income) {
+        setIncomes((prev) => [response.data.income, ...prev]);
+      } else {
+        await getIncomes();
+      }
       setError(null);
       return true;
     } catch (err) {
@@ -127,7 +131,7 @@ export const GlobalProvider = ({ children }) => {
     }
     try {
       await axios.delete(`${V1_URL}delete-income/${id}`, getAuthHeaders());
-      await getIncomes();
+      setIncomes((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
     }
@@ -149,8 +153,12 @@ export const GlobalProvider = ({ children }) => {
       return false;
     }
     try {
-      await axios.post(`${V1_URL}add-expense`, expense, getAuthHeaders());
-      await getExpenses();
+      const response = await axios.post(`${V1_URL}add-expense`, expense, getAuthHeaders());
+      if (response.data?.expense) {
+        setExpenses((prev) => [response.data.expense, ...prev]);
+      } else {
+        await getExpenses();
+      }
       setError(null);
       return true;
     } catch (err) {
@@ -181,7 +189,7 @@ export const GlobalProvider = ({ children }) => {
     }
     try {
       await axios.delete(`${V1_URL}delete-expense/${id}`, getAuthHeaders());
-      await getExpenses();
+      setExpenses((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
       setError(err.response?.data?.message || 'Server Error');
     }

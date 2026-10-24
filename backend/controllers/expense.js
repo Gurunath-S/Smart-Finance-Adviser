@@ -54,15 +54,11 @@ exports.deleteExpense = async (req, res) => {
     const userId = req.userId;
 
     try {
-        const expense = await ExpenseSchema.findById(id).lean();
-        if (!expense) {
-            return res.status(404).json({ message: 'Expense not found' });
+        // Atomic single-query deletion (halves latency and avoids race conditions)
+        const deleted = await ExpenseSchema.findOneAndDelete({ _id: id, userId });
+        if (!deleted) {
+            return res.status(404).json({ message: 'Expense not found or unauthorized' });
         }
-        if (expense.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ message: 'You can only delete your own expense' });
-        }
-
-        await ExpenseSchema.findByIdAndDelete(id);
         res.status(200).json({ message: 'Expense Deleted' });
     } catch (error) {
         console.error('Error deleting expense:', error.message);
