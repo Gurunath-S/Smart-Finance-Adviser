@@ -31,6 +31,8 @@ import {
   applyCashTransactionToDenominations,
   autoSelectDenominationsForAmount,
   calculateCashTotal,
+  calculateChangeDenominations,
+  applyCashExpenseWithChange,
 } from '../../services/cashService';
 import {
   PaymentMode,
@@ -57,6 +59,8 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
   // Cash Denomination state
   const [selectedNotes, setSelectedNotes] = useState<Partial<CashDenominationNotes>>({});
   const [selectedCoins, setSelectedCoins] = useState<Partial<CashDenominationCoins>>({});
+  const [changeNotes, setChangeNotes] = useState<Partial<CashDenominationNotes>>({});
+  const [changeCoins, setChangeCoins] = useState<Partial<CashDenominationCoins>>({});
   const [shouldUpdateDenominations, setShouldUpdateDenominations] = useState<boolean>(true);
 
   // Calculation Options (Omit Amount)
@@ -103,19 +107,41 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
           const autoAllocated = autoSelectDenominationsForAmount(
             currentNotes,
             currentCoins,
-            parsedAmount
+            parsedAmount,
+            true
           );
           deltaNotes = autoAllocated.notes;
           deltaCoins = autoAllocated.coins;
         }
 
-        const updated = applyCashTransactionToDenominations(
-          currentNotes,
-          currentCoins,
-          deltaNotes,
-          deltaCoins,
-          'expense'
-        );
+        const effectiveTenderTotal = calculateCashTotal(deltaNotes, deltaCoins).totalCash;
+        let updated: { notes: CashDenominationNotes; coins: CashDenominationCoins };
+
+        if (effectiveTenderTotal > parsedAmount) {
+          const changeAmount = effectiveTenderTotal - parsedAmount;
+          const customChangeTotal = calculateCashTotal(changeNotes, changeCoins).totalCash;
+          const effectiveChange =
+            customChangeTotal === changeAmount
+              ? { notes: changeNotes, coins: changeCoins }
+              : calculateChangeDenominations(changeAmount);
+
+          updated = applyCashExpenseWithChange(
+            currentNotes,
+            currentCoins,
+            deltaNotes,
+            deltaCoins,
+            effectiveChange.notes,
+            effectiveChange.coins
+          );
+        } else {
+          updated = applyCashTransactionToDenominations(
+            currentNotes,
+            currentCoins,
+            deltaNotes,
+            deltaCoins,
+            'expense'
+          );
+        }
 
         await cashService.updateCashDenominations(
           updated.notes,
@@ -229,6 +255,10 @@ export const AddExpenseScreen: React.FC<AddExpenseScreenProps> = ({ navigation }
               onChangeSelectedNotes={setSelectedNotes}
               selectedCoins={selectedCoins}
               onChangeSelectedCoins={setSelectedCoins}
+              changeNotes={changeNotes}
+              onChangeChangeNotes={setChangeNotes}
+              changeCoins={changeCoins}
+              onChangeChangeCoins={setChangeCoins}
               shouldUpdateDenominations={shouldUpdateDenominations}
               onToggleUpdateDenominations={setShouldUpdateDenominations}
               currentAmount={parseFloat(amount) || 0}

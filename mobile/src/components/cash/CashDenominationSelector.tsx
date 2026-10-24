@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
 import { radii, spacing } from '../../theme/spacing';
 import { formatCurrency } from '../../utils/currency';
 import {
@@ -20,6 +19,7 @@ import {
   COIN_VALUES,
   calculateCashTotal,
   autoSelectDenominationsForAmount,
+  calculateChangeDenominations,
 } from '../../services/cashService';
 import { CashDenominationNotes, CashDenominationCoins } from '../../types';
 
@@ -33,6 +33,11 @@ interface CashDenominationSelectorProps {
   onToggleUpdateDenominations: (val: boolean) => void;
   currentAmount?: number;
   onSyncAmountWithCash?: (total: number) => void;
+  // Optional Change Return states (when cash given > expense amount)
+  changeNotes?: Partial<CashDenominationNotes>;
+  onChangeChangeNotes?: (notes: Partial<CashDenominationNotes>) => void;
+  changeCoins?: Partial<CashDenominationCoins>;
+  onChangeChangeCoins?: (coins: Partial<CashDenominationCoins>) => void;
 }
 
 export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> = ({
@@ -45,12 +50,28 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
   onToggleUpdateDenominations,
   currentAmount = 0,
   onSyncAmountWithCash,
+  changeNotes,
+  onChangeChangeNotes,
+  changeCoins,
+  onChangeChangeCoins,
 }) => {
   const [availableNotes, setAvailableNotes] = useState<CashDenominationNotes>(defaultNotes);
   const [availableCoins, setAvailableCoins] = useState<CashDenominationCoins>(defaultCoins);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'notes' | 'coins'>('notes');
+  const [isCustomChangeOpen, setIsCustomChangeOpen] = useState<boolean>(false);
+  const [activeChangeTab, setActiveChangeTab] = useState<'notes' | 'coins'>('notes');
+
+  // Local fallback if parent doesn't provide change states
+  const [localChangeNotes, setLocalChangeNotes] = useState<Partial<CashDenominationNotes>>({});
+  const [localChangeCoins, setLocalChangeCoins] = useState<Partial<CashDenominationCoins>>({});
+  const [isCustomChangeActive, setIsCustomChangeActive] = useState<boolean>(false);
+
+  const effectiveChangeNotes = changeNotes !== undefined ? changeNotes : localChangeNotes;
+  const setEffectiveChangeNotes = onChangeChangeNotes || setLocalChangeNotes;
+  const effectiveChangeCoins = changeCoins !== undefined ? changeCoins : localChangeCoins;
+  const setEffectiveChangeCoins = onChangeChangeCoins || setLocalChangeCoins;
 
   useEffect(() => {
     let isMounted = true;
@@ -82,6 +103,39 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
     [selectedNotes, selectedCoins]
   );
 
+  // Change amount calculation for expenses
+  const changeDueAmount = useMemo(() => {
+    if (type !== 'expense' || currentAmount <= 0 || selectedTotal <= currentAmount) {
+      return 0;
+    }
+    return Math.round((selectedTotal - currentAmount) * 100) / 100;
+  }, [type, currentAmount, selectedTotal]);
+
+  // Standard auto-breakdown for change
+  const standardChange = useMemo(() => {
+    return calculateChangeDenominations(changeDueAmount);
+  }, [changeDueAmount]);
+
+  // Keep effective change synced with auto breakdown unless user has custom change active
+  useEffect(() => {
+    if (type === 'expense') {
+      if (changeDueAmount > 0 && !isCustomChangeActive) {
+        setEffectiveChangeNotes(standardChange.notes);
+        setEffectiveChangeCoins(standardChange.coins);
+      } else if (changeDueAmount === 0) {
+        setEffectiveChangeNotes({});
+        setEffectiveChangeCoins({});
+        setIsCustomChangeActive(false);
+        setIsCustomChangeOpen(false);
+      }
+    }
+  }, [changeDueAmount, isCustomChangeActive, standardChange, type]);
+
+  // Custom change total
+  const customChangeTotal = useMemo(() => {
+    return calculateCashTotal(effectiveChangeNotes, effectiveChangeCoins).totalCash;
+  }, [effectiveChangeNotes, effectiveChangeCoins]);
+
   const updateNoteCount = (key: keyof CashDenominationNotes, delta: number) => {
     const current = selectedNotes[key] || 0;
     const next = Math.max(0, current + delta);
@@ -89,8 +143,15 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
     onChangeSelectedNotes(updated);
 
     const newTotal = calculateCashTotal(updated, selectedCoins).totalCash;
-    if (onSyncAmountWithCash && newTotal > 0) {
-      onSyncAmountWithCash(newTotal);
+    if (type === 'income') {
+      if (onSyncAmountWithCash && newTotal > 0) {
+        onSyncAmountWithCash(newTotal);
+      }
+    } else {
+      // In expense mode, only auto-sync if user hasn't typed an amount yet
+      if (onSyncAmountWithCash && (!currentAmount || currentAmount <= 0) && newTotal > 0) {
+        onSyncAmountWithCash(newTotal);
+      }
     }
   };
 
@@ -101,9 +162,37 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
     onChangeSelectedCoins(updated);
 
     const newTotal = calculateCashTotal(selectedNotes, updated).totalCash;
-    if (onSyncAmountWithCash && newTotal > 0) {
-      onSyncAmountWithCash(newTotal);
+    if (type === 'income') {
+      if (onSyncAmountWithCash && newTotal > 0) {
+        onSyncAmountWithCash(newTotal);
+      }
+    } else {
+      // In expense mode, only auto-sync if user hasn't typed an amount yet
+      if (onSyncAmountWithCash && (!currentAmount || currentAmount <= 0) && newTotal > 0) {
+        onSyncAmountWithCash(newTotal);
+      }
     }
+  };
+
+  // Handlers for customizing change received
+  const updateChangeNoteCount = (key: keyof CashDenominationNotes, delta: number) => {
+    setIsCustomChangeActive(true);
+    const current = effectiveChangeNotes[key] || 0;
+    const next = Math.max(0, current + delta);
+    setEffectiveChangeNotes({ ...effectiveChangeNotes, [key]: next });
+  };
+
+  const updateChangeCoinCount = (key: keyof CashDenominationCoins, delta: number) => {
+    setIsCustomChangeActive(true);
+    const current = effectiveChangeCoins[key] || 0;
+    const next = Math.max(0, current + delta);
+    setEffectiveChangeCoins({ ...effectiveChangeCoins, [key]: next });
+  };
+
+  const handleResetChangeToStandard = () => {
+    setIsCustomChangeActive(false);
+    setEffectiveChangeNotes(standardChange.notes);
+    setEffectiveChangeCoins(standardChange.coins);
   };
 
   const handleAutoMatch = () => {
@@ -111,7 +200,8 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
     const matched = autoSelectDenominationsForAmount(
       availableNotes,
       availableCoins,
-      currentAmount
+      currentAmount,
+      type === 'expense' // allow higher tender note if small change unavailable
     );
     onChangeSelectedNotes(matched.notes);
     onChangeSelectedCoins(matched.coins);
@@ -120,14 +210,23 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
   const handleClear = () => {
     onChangeSelectedNotes({});
     onChangeSelectedCoins({});
+    setEffectiveChangeNotes({});
+    setEffectiveChangeCoins({});
+    setIsCustomChangeActive(false);
+    setIsCustomChangeOpen(false);
   };
 
   const remainingOrNewCash = useMemo(() => {
     if (type === 'expense') {
+      if (currentAmount > 0 && selectedTotal >= currentAmount) {
+        // You give selectedTotal and get (selectedTotal - currentAmount) change back
+        // The net cash reduction is currentAmount
+        return Math.max(0, availableTotal - currentAmount);
+      }
       return Math.max(0, availableTotal - selectedTotal);
     }
     return availableTotal + selectedTotal;
-  }, [availableTotal, selectedTotal, type]);
+  }, [availableTotal, selectedTotal, currentAmount, type]);
 
   const noteKeys: (keyof CashDenominationNotes)[] = ['n500', 'n200', 'n100', 'n50', 'n20', 'n10'];
   const coinKeys: (keyof CashDenominationCoins)[] = ['c20', 'c10', 'c5', 'c2', 'c1'];
@@ -156,7 +255,11 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
           {selectedTotal > 0 && (
             <View style={styles.activePill}>
               <Text style={styles.activePillText}>
-                {type === 'expense' ? 'Spend' : 'Add'}: {formatCurrency(selectedTotal)}
+                {type === 'expense'
+                  ? changeDueAmount > 0
+                    ? `Given: ${formatCurrency(selectedTotal)}`
+                    : `Spend: ${formatCurrency(selectedTotal)}`
+                  : `Add: ${formatCurrency(selectedTotal)}`}
               </Text>
             </View>
           )}
@@ -181,8 +284,8 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
               <View style={styles.instructionRow}>
                 <Text style={styles.instructionText}>
                   {type === 'expense'
-                    ? 'Select which notes/coins you spent:'
-                    : 'Select which notes/coins you received:'}
+                    ? 'Select cash notes/coins given (tendered):'
+                    : 'Select cash notes/coins received:'}
                 </Text>
                 {currentAmount > 0 && selectedTotal === 0 && (
                   <TouchableOpacity
@@ -191,7 +294,7 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
                     activeOpacity={0.7}
                   >
                     <Ionicons name="flash-outline" size={12} color="#059669" />
-                    <Text style={styles.autoMatchText}>Auto-Match Amount</Text>
+                    <Text style={styles.autoMatchText}>Auto-Select Cash</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -356,17 +459,295 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
                     })}
               </View>
 
+              {/* Quick option to sync expense amount if user wants exact matching */}
+              {type === 'expense' && selectedTotal > 0 && currentAmount > 0 && selectedTotal !== currentAmount && (
+                <TouchableOpacity
+                  style={styles.syncLinkRow}
+                  onPress={() => onSyncAmountWithCash && onSyncAmountWithCash(selectedTotal)}
+                >
+                  <Text style={styles.syncLinkText}>
+                    Did this actually cost {formatCurrency(selectedTotal)}? Tap to change expense amount
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* CHANGE RETURNED SECTION (When cash given > expense amount) */}
+              {type === 'expense' && changeDueAmount > 0 && (
+                <View style={styles.changeCard}>
+                  <View style={styles.changeCardHeader}>
+                    <View style={styles.changeHeaderLeft}>
+                      <View style={styles.changeIconBadge}>
+                        <Ionicons name="arrow-undo" size={14} color="#047857" />
+                      </View>
+                      <View>
+                        <Text style={styles.changeCardTitle}>Change Returned to You</Text>
+                        <Text style={styles.changeCardSubtitle}>
+                          Given: <Text style={styles.boldText}>{formatCurrency(selectedTotal)}</Text> • Expense:{' '}
+                          <Text style={styles.boldText}>{formatCurrency(currentAmount)}</Text>
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.changeAmountBadge}>
+                      <Text style={styles.changeAmountText}>+{formatCurrency(changeDueAmount)}</Text>
+                    </View>
+                  </View>
+
+                  {/* Badges for Change Denominations */}
+                  <View style={styles.changeBadgesWrap}>
+                    {noteKeys.map((k) => {
+                      const count = effectiveChangeNotes[k] || 0;
+                      if (!count) return null;
+                      return (
+                        <View key={k} style={styles.changeBadge}>
+                          <Ionicons name="cash-outline" size={11} color="#065F46" />
+                          <Text style={styles.changeBadgeText}>
+                            {count}× ₹{NOTE_VALUES[k]} note
+                          </Text>
+                        </View>
+                      );
+                    })}
+                    {coinKeys.map((k) => {
+                      const count = effectiveChangeCoins[k] || 0;
+                      if (!count) return null;
+                      return (
+                        <View key={k} style={styles.changeBadge}>
+                          <Ionicons name="disc-outline" size={11} color="#065F46" />
+                          <Text style={styles.changeBadgeText}>
+                            {count}× ₹{COIN_VALUES[k]} coin
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={styles.changeHintText}>
+                    💡 Your wallet will deduct {formatCurrency(selectedTotal)} given and automatically add back{' '}
+                    {formatCurrency(changeDueAmount)} in change (Net deduction: -{formatCurrency(currentAmount)}).
+                  </Text>
+
+                  {/* Toggle Customize Change Received */}
+                  <TouchableOpacity
+                    style={styles.customizeToggleBtn}
+                    onPress={() => setIsCustomChangeOpen(!isCustomChangeOpen)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={isCustomChangeOpen ? 'chevron-up' : 'options-outline'}
+                      size={13}
+                      color="#047857"
+                    />
+                    <Text style={styles.customizeToggleText}>
+                      {isCustomChangeOpen
+                        ? 'Hide Custom Change Adjuster'
+                        : isCustomChangeActive
+                        ? 'Customized Change (Active) - Edit'
+                        : 'Received different change? Customize'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Custom Change Adjuster Drawer */}
+                  {isCustomChangeOpen && (
+                    <View style={styles.customDrawer}>
+                      <View style={styles.customDrawerHeader}>
+                        <Text style={styles.customDrawerTitle}>Select Actual Change Received:</Text>
+                        {isCustomChangeActive && (
+                          <TouchableOpacity onPress={handleResetChangeToStandard}>
+                            <Text style={styles.resetStandardText}>Reset Standard</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {/* Tab Switcher for custom change */}
+                      <View style={[styles.tabBar, { marginVertical: 4 }]}>
+                        <TouchableOpacity
+                          style={[
+                            styles.tabItem,
+                            activeChangeTab === 'notes' && styles.tabItemActive,
+                          ]}
+                          onPress={() => setActiveChangeTab('notes')}
+                        >
+                          <Text
+                            style={[
+                              styles.tabItemText,
+                              activeChangeTab === 'notes' && styles.tabItemTextActive,
+                            ]}
+                          >
+                            Change Notes
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.tabItem,
+                            activeChangeTab === 'coins' && styles.tabItemActive,
+                          ]}
+                          onPress={() => setActiveChangeTab('coins')}
+                        >
+                          <Text
+                            style={[
+                              styles.tabItemText,
+                              activeChangeTab === 'coins' && styles.tabItemTextActive,
+                            ]}
+                          >
+                            Change Coins
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Custom change grid */}
+                      <View style={styles.denomGrid}>
+                        {activeChangeTab === 'notes'
+                          ? noteKeys.map((key) => {
+                              const noteVal = NOTE_VALUES[key];
+                              const cnt = effectiveChangeNotes[key] || 0;
+                              return (
+                                <View
+                                  key={`chg-${key}`}
+                                  style={[
+                                    styles.denomBox,
+                                    cnt > 0 && styles.denomBoxSelected,
+                                    { width: '48%' },
+                                  ]}
+                                >
+                                  <Text style={styles.denomLabel}>₹{noteVal}</Text>
+                                  <View style={styles.counterRow}>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.counterBtn,
+                                        cnt === 0 && styles.counterBtnDisabled,
+                                      ]}
+                                      onPress={() => updateChangeNoteCount(key, -1)}
+                                      disabled={cnt === 0}
+                                    >
+                                      <Ionicons name="remove" size={13} color={colors.textPrimary} />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.counterVal, cnt > 0 && styles.counterValActive]}>
+                                      {cnt}
+                                    </Text>
+                                    <TouchableOpacity
+                                      style={styles.counterBtn}
+                                      onPress={() => updateChangeNoteCount(key, 1)}
+                                    >
+                                      <Ionicons name="add" size={13} color="#059669" />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              );
+                            })
+                          : coinKeys.map((key) => {
+                              const coinVal = COIN_VALUES[key];
+                              const cnt = effectiveChangeCoins[key] || 0;
+                              return (
+                                <View
+                                  key={`chg-${key}`}
+                                  style={[
+                                    styles.denomBox,
+                                    cnt > 0 && styles.denomBoxSelected,
+                                    { width: '48%' },
+                                  ]}
+                                >
+                                  <Text style={styles.denomLabel}>₹{coinVal}</Text>
+                                  <View style={styles.counterRow}>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.counterBtn,
+                                        cnt === 0 && styles.counterBtnDisabled,
+                                      ]}
+                                      onPress={() => updateChangeCoinCount(key, -1)}
+                                      disabled={cnt === 0}
+                                    >
+                                      <Ionicons name="remove" size={13} color={colors.textPrimary} />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.counterVal, cnt > 0 && styles.counterValActive]}>
+                                      {cnt}
+                                    </Text>
+                                    <TouchableOpacity
+                                      style={styles.counterBtn}
+                                      onPress={() => updateChangeCoinCount(key, 1)}
+                                    >
+                                      <Ionicons name="add" size={13} color="#059669" />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              );
+                            })}
+                      </View>
+
+                      {/* Custom change balance indicator */}
+                      <View style={styles.customStatusRow}>
+                        <Text style={styles.customStatusText}>
+                          Selected change: <Text style={styles.boldText}>{formatCurrency(customChangeTotal)}</Text>
+                        </Text>
+                        {customChangeTotal === changeDueAmount ? (
+                          <View style={styles.validChangeTag}>
+                            <Ionicons name="checkmark-circle" size={12} color="#059669" />
+                            <Text style={styles.validChangeText}>Matches {formatCurrency(changeDueAmount)}</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.warnChangeTag}>
+                            <Ionicons name="alert-circle" size={12} color="#D97706" />
+                            <Text style={styles.warnChangeText}>
+                              {customChangeTotal > changeDueAmount
+                                ? `Over by ${formatCurrency(customChangeTotal - changeDueAmount)}`
+                                : `Short by ${formatCurrency(changeDueAmount - customChangeTotal)}`}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* EXACT TENDER BANNER (When cash given == expense amount) */}
+              {type === 'expense' && selectedTotal > 0 && currentAmount > 0 && selectedTotal === currentAmount && (
+                <View style={styles.exactTenderBanner}>
+                  <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                  <Text style={styles.exactTenderText}>
+                    Exact cash tendered ({formatCurrency(selectedTotal)}). No change returned.
+                  </Text>
+                </View>
+              )}
+
+              {/* PARTIAL TENDER BANNER (When cash given < expense amount) */}
+              {type === 'expense' && selectedTotal > 0 && currentAmount > 0 && selectedTotal < currentAmount && (
+                <View style={styles.partialTenderBanner}>
+                  <Ionicons name="information-circle" size={14} color="#2563EB" />
+                  <Text style={styles.partialTenderText}>
+                    Tendered {formatCurrency(selectedTotal)} of {formatCurrency(currentAmount)} (Short by{' '}
+                    {formatCurrency(currentAmount - selectedTotal)})
+                  </Text>
+                </View>
+              )}
+
               {/* Selection Summary Banner */}
               {selectedTotal > 0 && (
                 <View style={styles.summaryBanner}>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>
-                      {type === 'expense' ? 'Cash Deducted:' : 'Cash Received:'}
+                      {type === 'expense' ? 'Cash Tendered (Given):' : 'Cash Received:'}
                     </Text>
                     <Text style={styles.summaryVal}>
                       {formatCurrency(selectedTotal)}
                     </Text>
                   </View>
+
+                  {type === 'expense' && changeDueAmount > 0 && (
+                    <View style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Change Returned:</Text>
+                      <Text style={[styles.summaryVal, { color: '#059669' }]}>
+                        +{formatCurrency(changeDueAmount)}
+                      </Text>
+                    </View>
+                  )}
+
+                  {type === 'expense' && currentAmount > 0 && (
+                    <View style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Net Expense Deducted:</Text>
+                      <Text style={[styles.summaryVal, { color: colors.expense }]}>
+                        -{formatCurrency(currentAmount)}
+                      </Text>
+                    </View>
+                  )}
 
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>
@@ -398,11 +779,13 @@ export const CashDenominationSelector: React.FC<CashDenominationSelectorProps> =
                 <View style={styles.toggleInfo}>
                   <Text style={styles.toggleTitle}>
                     {type === 'expense'
-                      ? 'Reduce In-Hand Cash on Save'
+                      ? 'Update In-Hand Cash & Change'
                       : 'Increase In-Hand Cash on Save'}
                   </Text>
                   <Text style={styles.toggleSubtitle}>
-                    Updates your live currency note counts automatically
+                    {type === 'expense'
+                      ? 'Deducts tendered notes and credits returned change automatically'
+                      : 'Updates your live currency note counts automatically'}
                   </Text>
                 </View>
                 <Switch
@@ -511,8 +894,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     backgroundColor: 'rgba(5, 150, 105, 0.12)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: radii.full,
   },
   autoMatchText: {
@@ -613,6 +996,203 @@ const styles = StyleSheet.create({
   },
   counterValActive: {
     color: '#059669',
+  },
+  syncLinkRow: {
+    marginTop: 6,
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  syncLinkText: {
+    fontSize: 10,
+    color: '#047857',
+    textDecorationLine: 'underline',
+  },
+  changeCard: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderColor: '#34D399',
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+    gap: 6,
+  },
+  changeCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  changeHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  changeIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    backgroundColor: 'rgba(5, 150, 105, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changeCardTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  changeCardSubtitle: {
+    fontSize: 10,
+    color: '#047857',
+    marginTop: 1,
+  },
+  changeAmountBadge: {
+    backgroundColor: '#059669',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
+  changeAmountText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  changeBadgesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginVertical: 2,
+  },
+  changeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
+  changeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  changeHintText: {
+    fontSize: 10,
+    color: '#047857',
+    lineHeight: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    padding: 6,
+    borderRadius: radii.sm,
+  },
+  customizeToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    marginTop: 2,
+  },
+  customizeToggleText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  customDrawer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.sm,
+    padding: spacing.xs,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    marginTop: 4,
+  },
+  customDrawerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  customDrawerTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  resetStandardText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#2563EB',
+    textDecorationLine: 'underline',
+  },
+  customStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  customStatusText: {
+    fontSize: 10,
+    color: colors.textSecondary,
+  },
+  validChangeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  validChangeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  warnChangeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  warnChangeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#D97706',
+  },
+  exactTenderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#34D399',
+  },
+  exactTenderText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#065F46',
+    flex: 1,
+  },
+  partialTenderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    borderRadius: radii.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  partialTenderText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E40AF',
+    flex: 1,
   },
   summaryBanner: {
     backgroundColor: '#FFFFFF',
