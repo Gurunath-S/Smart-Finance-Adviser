@@ -49,7 +49,10 @@ const ExpenseSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// Compound index for efficient user filtering & date-descending sorting
+// Compound indexes for optimal query coverage (ESR: Equality -> Sort -> Range)
 ExpenseSchema.index({ userId: 1, date: -1 });
+ExpenseSchema.index({ userId: 1, paymentMode: 1, date: -1 });
+ExpenseSchema.index({ userId: 1, category: 1, date: -1 });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);
+

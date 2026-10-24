@@ -1,5 +1,6 @@
 const IncomeSchema = require("../models/IncomeModel");
 const { parseMonetaryAmount } = require("../utils/currency");
+const { fetchTransactionsClean } = require("../utils/queryHelper");
 
 exports.addIncome = async (req, res) => {
     const { title, amount, category, description, date, paymentMode, excludeFromTotal, omittedAmount } = req.body;
@@ -37,12 +38,7 @@ exports.addIncome = async (req, res) => {
 exports.getIncomes = async (req, res) => {
     const userId = req.userId;
     try {
-        // .lean() returns plain JS objects (much faster than full Mongoose docs)
-        // Sort on DB side so client doesn't have to
-        const income = await IncomeSchema
-            .find({ userId })
-            .sort({ date: -1 })
-            .lean();
+        const income = await fetchTransactionsClean(IncomeSchema, userId, req.query, res);
         res.status(200).json(income);
     } catch (error) {
         console.error("Error fetching incomes:", error);

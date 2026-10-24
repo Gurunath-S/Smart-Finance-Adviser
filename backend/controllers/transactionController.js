@@ -1,15 +1,23 @@
 const IncomeSchema = require("../models/IncomeModel");
 const ExpenseSchema = require("../models/ExpenseModel");
 const User = require("../models/User");
+const { buildTransactionFilter } = require("../utils/queryHelper");
 
 // Unified Batch Overview: Returns incomes, expenses, and cash denominations in ONE round-trip
 exports.fetchFinancialOverview = async (req, res) => {
     const userId = req.userId;
 
     try {
+        const filter = buildTransactionFilter(userId, req.query);
+        let expQuery = ExpenseSchema.find(filter).sort({ date: -1 });
+        if (typeof expQuery.select === 'function') expQuery = expQuery.select('-__v');
+
+        let incQuery = IncomeSchema.find(filter).sort({ date: -1 });
+        if (typeof incQuery.select === 'function') incQuery = incQuery.select('-__v');
+
         const [expenses, incomes, user] = await Promise.all([
-            ExpenseSchema.find({ userId }).sort({ date: -1 }).lean(),
-            IncomeSchema.find({ userId }).sort({ date: -1 }).lean(),
+            expQuery.lean(),
+            incQuery.lean(),
             User.findById(userId).select('cashDenominations').lean()
         ]);
 
@@ -69,11 +77,16 @@ exports.fetchTransactions = async (req, res) => {
     }
 
     try {
-        // Parallel fetch — both run at the same time instead of sequentially
-        // .lean() returns plain objects which are much faster to serialize
+        const filter = buildTransactionFilter(targetUserId, req.query);
+        let expQuery = ExpenseSchema.find(filter).sort({ date: -1 });
+        if (typeof expQuery.select === 'function') expQuery = expQuery.select('-__v');
+
+        let incQuery = IncomeSchema.find(filter).sort({ date: -1 });
+        if (typeof incQuery.select === 'function') incQuery = incQuery.select('-__v');
+
         const [expenses, incomes] = await Promise.all([
-            ExpenseSchema.find({ userId: targetUserId }).sort({ date: -1 }).lean(),
-            IncomeSchema.find({ userId: targetUserId }).sort({ date: -1 }).lean()
+            expQuery.lean(),
+            incQuery.lean()
         ]);
 
         return res.status(200).json({ expenses, incomes });

@@ -124,6 +124,18 @@ export interface SuggestionApiResponse {
   suggestions: string[];
 }
 
+export interface TransactionQueryParams {
+  startDate?: string;
+  endDate?: string;
+  paymentMode?: PaymentMode;
+  category?: string;
+  limit?: number;
+  skip?: number;
+  page?: number;
+  search?: string;
+  paginate?: boolean;
+}
+
 // Navigation Param Lists
 export type RootStackParamList = {
   Auth: undefined;

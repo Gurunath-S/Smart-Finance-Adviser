@@ -1,5 +1,6 @@
 const ExpenseSchema = require("../models/ExpenseModel");
 const { parseMonetaryAmount } = require("../utils/currency");
+const { fetchTransactionsClean } = require("../utils/queryHelper");
 
 exports.addExpense = async (req, res) => {
     const { title, amount, category, description, date, paymentMode, excludeFromTotal, omittedAmount } = req.body;
@@ -36,12 +37,7 @@ exports.addExpense = async (req, res) => {
 exports.getExpense = async (req, res) => {
     const userId = req.userId;
     try {
-        // .lean() returns plain JS objects (much faster than full Mongoose docs)
-        // Sort on DB side so client doesn't have to
-        const expense = await ExpenseSchema
-            .find({ userId })
-            .sort({ date: -1 })
-            .lean();
+        const expense = await fetchTransactionsClean(ExpenseSchema, userId, req.query, res);
         res.status(200).json(expense);
     } catch (error) {
         console.error("Error fetching expenses:", error);

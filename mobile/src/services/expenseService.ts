@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Expense, PaymentMode } from '../types';
+import { Expense, PaymentMode, TransactionQueryParams } from '../types';
 
 export interface CreateExpenseData {
   title: string;
@@ -13,8 +13,8 @@ export interface CreateExpenseData {
 }
 
 export const expenseService = {
-  async getExpenses(): Promise<Expense[]> {
-    const response = await api.get<Expense[]>('/v1/get-expenses');
+  async getExpenses(params?: TransactionQueryParams): Promise<Expense[]> {
+    const response = await api.get<Expense[]>('/v1/get-expenses', { params });
     return response.data;
   },
 

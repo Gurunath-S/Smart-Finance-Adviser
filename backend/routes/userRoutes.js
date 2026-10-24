@@ -213,11 +213,16 @@ router.delete("/delete-users/:id", verifyToken, verifyAdmin, async (req, res) =>
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Cascade delete related incomes, expenses, and suggestions
+    // Cascade delete related incomes, expenses, and suggestions across both _id and custom userId
+    const idTargets = [user._id.toString()];
+    if (user.userId && user.userId !== user._id.toString()) {
+      idTargets.push(user.userId);
+    }
+
     await Promise.all([
-      IncomeSchema.deleteMany({ userId: user._id.toString() }),
-      ExpenseSchema.deleteMany({ userId: user._id.toString() }),
-      Suggestion.deleteMany({ userId: user._id.toString() })
+      IncomeSchema.deleteMany({ userId: { $in: idTargets } }),
+      ExpenseSchema.deleteMany({ userId: { $in: idTargets } }),
+      Suggestion.deleteMany({ userId: { $in: idTargets } })
     ]);
 
     res.status(200).json({ message: "User and associated data deleted successfully" });
@@ -232,8 +237,8 @@ router.get('/get-user-transactions/:userId', verifyToken, verifyAdmin, async (re
 
   try {
     const [expenses, incomes] = await Promise.all([
-      ExpenseSchema.find({ userId }).sort({ date: -1 }).lean(),
-      IncomeSchema.find({ userId }).sort({ date: -1 }).lean()
+      ExpenseSchema.find({ userId }).sort({ date: -1 }).select('-__v').lean(),
+      IncomeSchema.find({ userId }).sort({ date: -1 }).select('-__v').lean()
     ]);
 
     return res.status(200).json({ expenses, incomes });

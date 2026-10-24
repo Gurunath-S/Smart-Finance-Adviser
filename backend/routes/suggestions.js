@@ -54,9 +54,11 @@ router.post('/saveSuggestions', verifyToken, async (req, res) => {
 // Get user's saved suggestions history (protected)
 router.get('/get-saved-suggestions', verifyToken, async (req, res) => {
   try {
+    const limit = req.query.limit ? Math.min(Math.max(1, parseInt(req.query.limit, 10) || 10), 50) : 10;
     const history = await Suggestion.find({ userId: req.userId })
       .sort({ createdAt: -1 })
-      .limit(10)
+      .limit(limit)
+      .select('-__v')
       .lean();
     res.status(200).json(history);
   } catch (error) {

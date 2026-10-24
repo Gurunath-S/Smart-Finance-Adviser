@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Income, PaymentMode } from '../types';
+import { Income, PaymentMode, TransactionQueryParams } from '../types';
 
 export interface CreateIncomeData {
   title: string;
@@ -13,8 +13,8 @@ export interface CreateIncomeData {
 }
 
 export const incomeService = {
-  async getIncomes(): Promise<Income[]> {
-    const response = await api.get<Income[]>('/v1/get-incomes');
+  async getIncomes(params?: TransactionQueryParams): Promise<Income[]> {
+    const response = await api.get<Income[]>('/v1/get-incomes', { params });
     return response.data;
   },
 

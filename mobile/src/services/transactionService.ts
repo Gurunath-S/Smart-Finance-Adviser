@@ -2,7 +2,7 @@ import { api } from './api';
 import { incomeService } from './incomeService';
 import { expenseService } from './expenseService';
 import { cashService, CashDenominationResponse } from './cashService';
-import { Income, Expense, UnifiedTransaction } from '../types';
+import { Income, Expense, UnifiedTransaction, TransactionQueryParams } from '../types';
 import { isCurrentMonth } from '../utils/date';
 
 export interface FinancialSummary {
@@ -174,26 +174,30 @@ let cachedResult: {
 } | null = null;
 
 export const transactionService = {
-  async fetchAllTransactions(forceRefresh = false): Promise<{
+  async fetchAllTransactions(
+    forceRefresh = false,
+    params?: TransactionQueryParams
+  ): Promise<{
     incomes: Income[];
     expenses: Expense[];
     cashData: CashDenominationResponse | null;
     unifiedTransactions: UnifiedTransaction[];
     summary: FinancialSummary;
   }> {
+    const hasParams = params && Object.keys(params).length > 0;
     const now = Date.now();
 
-    // If cache is fresh and not forcing refresh, return immediately with 0 network latency
-    if (!forceRefresh && cachedResult && now - lastFetchTime < CACHE_TTL_MS) {
+    // If cache is fresh and not forcing refresh and no custom query params, return immediately with 0 network latency
+    if (!forceRefresh && !hasParams && cachedResult && now - lastFetchTime < CACHE_TTL_MS) {
       return cachedResult;
     }
 
-    // If a request is already flying, reuse it instead of spawning 3 more HTTP calls
-    if (activeFetchPromise) {
+    // If a request is already flying and no custom params, reuse it instead of spawning 3 more HTTP calls
+    if (!hasParams && activeFetchPromise) {
       return activeFetchPromise;
     }
 
-    activeFetchPromise = (async () => {
+    const fetchPromise = (async () => {
       try {
         let incomes: Income[];
         let expenses: Expense[];
@@ -205,15 +209,15 @@ export const transactionService = {
             incomes: Income[];
             expenses: Expense[];
             cashData?: CashDenominationResponse | null;
-          }>('/v1/financial-overview');
+          }>('/v1/financial-overview', { params });
           incomes = response.data.incomes || [];
           expenses = response.data.expenses || [];
           cashData = response.data.cashData || null;
         } catch {
           // Fallback to legacy parallel calls if connecting to older backend instance
           const [legacyIncomes, legacyExpenses, legacyCash] = await Promise.all([
-            incomeService.getIncomes(),
-            expenseService.getExpenses(),
+            incomeService.getIncomes(params),
+            expenseService.getExpenses(params),
             cashService.getCashDenominations().catch(() => null),
           ]);
           incomes = legacyIncomes;
@@ -232,15 +236,23 @@ export const transactionService = {
           summary,
         };
 
-        cachedResult = result;
-        lastFetchTime = Date.now();
+        if (!hasParams) {
+          cachedResult = result;
+          lastFetchTime = Date.now();
+        }
         return result;
       } finally {
-        activeFetchPromise = null;
+        if (!hasParams) {
+          activeFetchPromise = null;
+        }
       }
     })();
 
-    return activeFetchPromise;
+    if (!hasParams) {
+      activeFetchPromise = fetchPromise;
+    }
+
+    return fetchPromise;
   },
 
   clearCache() {
