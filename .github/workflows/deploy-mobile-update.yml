@@ -37,4 +37,6 @@ jobs:
 
       - name: Publish Over-The-Air (OTA) Update
         working-directory: ./mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas update --auto --branch production --message "Automated update from GitHub commit ${{ github.sha }}"
